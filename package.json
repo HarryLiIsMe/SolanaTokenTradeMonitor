@@ -9,8 +9,8 @@
 		"packs": "echo packs",
 		"clean": "echo clean",
 		"test": "npx mocha --config .mocharc.json 'tests/**/*.ts'",
-		"main1": "DEBUG=info,error node -r ts-node/register -r tsconfig-paths/register -r dotenv/config src/main.ts",
-		"main2": "DEBUG=info,error ts-node -r tsconfig-paths/register -r dotenv/config src/main.ts"
+		"main1": "node -r ts-node/register -r tsconfig-paths/register -r dotenv/config src/main.ts",
+		"main2": "ts-node -r tsconfig-paths/register -r dotenv/config src/main.ts"
 	},
 	"license": "MIT",
 	"dependencies": {
@@ -21,19 +21,26 @@
 		"@metaplex-foundation/umi-bundle-defaults": "^1.1.1",
 		"@solana/web3.js": "^1.98.0",
 		"@triton-one/yellowstone-grpc": "^3.0.0",
+		"@types/express": "^5.0.0",
 		"bs58": "^6.0.0",
 		"ccxt": "^4.4.65",
-		"debug": "^4.4.0",
 		"dotenv": "^16.4.7",
+		"express": "^4.21.2",
+		"log4j": "^1.0.0",
+		"log4js": "^6.9.1",
 		"node-fetch": "^3.3.2",
+		"pg": "^8.14.1",
+		"pg-hstore": "^2.3.4",
+		"postgres": "^3.4.5",
+		"sequelize": "^6.37.6",
 		"sleep-promise": "^9.1.0",
 		"typescript": "^5.7.2",
-		"util": "^0.12.5"
+		"util": "^0.12.5",
+		"zod": "^3.24.2"
 	},
 	"devDependencies": {
 		"@projectsophon/eslint-plugin-typescript-enum": "^2.2.0",
 		"@types/chai": "^4.3.20",
-		"@types/debug": "^4.1.12",
 		"@types/mocha": "^10.0.10",
 		"@types/node": "^20.17.10",
 		"@typescript-eslint/eslint-plugin": "^8.18.2",
