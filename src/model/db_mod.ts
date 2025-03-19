@@ -14,6 +14,7 @@ async function init_db() {
 
     followed_usrs = await load_followed_usrs_from_db();
     follow_positions = await load_follow_positions_from_db();
+    follow_txs = await load_follow_txs_from_db();
 
     logger.info('init db success');
 }
@@ -26,7 +27,11 @@ async function load_follow_positions_from_db() {
     return new Map();
 }
 
-class followed_usr {
+async function load_follow_txs_from_db() {
+    return new Map();
+}
+
+class FollowedUsr {
     constructor() {
         this.account_addr = '';
         this.last_tx_hash = '';
@@ -42,7 +47,7 @@ class followed_usr {
     is_disabled: boolean;
 }
 
-class follow_position {
+class FollowPosition {
     constructor() {
         this.followed_account_addr = '';
         this.token_id = '';
@@ -54,14 +59,44 @@ class follow_position {
     amount: number;
 }
 
-let followed_usrs: Map<string, followed_usr> = new Map();
-// key = followed_account_addr + token_id
-let follow_positions: Map<string, follow_position> = new Map();
+class FollowTx {
+    constructor() {
+        this.following_tx_hash = '';
+        this.followed_tx_hash = '';
+        this.followed_account_addr = '';
+        this.token_id = '';
+        this.amount = 0;
+        this.token_symbol = '';
+        this.amount = 0;
+        this.trade_direct = true;
+    }
+
+    following_tx_hash: string;
+    followed_tx_hash: string;
+    followed_account_addr: string;
+    token_id: string;
+    token_symbol: string;
+    amount: number;
+    // buy=true or sell=false.
+    trade_direct: boolean;
+}
+
+// key = account_addr.
+let followed_usrs: Map<string, FollowedUsr> = new Map();
+// key = followed_account_addr + token_id.
+let follow_positions: Map<string, FollowPosition> = new Map();
+// key = following_tx_hash.
+let follow_txs: Map<string, FollowTx> = new Map();
 
 export {
-    follow_position,
-    followed_usr,
+    // follow_position,
+    // followed_usr,
+    // follow_tx,
     follow_positions,
     followed_usrs,
+    follow_txs,
+    load_follow_txs_from_db,
+    load_followed_usrs_from_db,
+    load_follow_positions_from_db,
     init_db,
 };

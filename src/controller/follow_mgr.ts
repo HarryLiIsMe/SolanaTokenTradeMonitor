@@ -2,7 +2,7 @@ import { PublicKey } from '@solana/web3.js';
 import { logger } from '../logger';
 import express, { Request, Response } from 'express';
 import bs58 from 'bs58';
-import { follow_positions, followed_usrs } from '@/model/db_mod';
+import { follow_positions, follow_txs, followed_usrs } from '@/model/db_mod';
 
 export { folllow_mgr_router };
 
@@ -12,6 +12,7 @@ folllow_mgr_router.get('/add_followed_addr/:addr', add_followed_addr);
 folllow_mgr_router.get('/del_followed_addr/:addr', del_followed_addr);
 folllow_mgr_router.get('/list_followed_users', list_followed_users);
 folllow_mgr_router.get('/list_follow_positions', list_follow_positions);
+folllow_mgr_router.get('/list_follow_txs', list_follow_txs);
 
 function add_followed_addr(req: Request, res: Response) {
     const followed_addr = req.params.addr;
@@ -70,6 +71,14 @@ function list_followed_users(req: Request, res: Response) {
 function list_follow_positions(req: Request, res: Response) {
     const followeds = {
         follow_positions: [...follow_positions.values()],
+    };
+
+    res.send(JSON.stringify(followeds));
+}
+
+function list_follow_txs(req: Request, res: Response) {
+    const followeds = {
+        follow_txs: [...follow_txs.values()],
     };
 
     res.send(JSON.stringify(followeds));

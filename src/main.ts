@@ -52,12 +52,17 @@ import { getPriorityFee } from './utils/tx_utils';
 
 async function main() {
     try {
-        init_logger();
-        init_conf();
-        await init_db();
-        // init_timer_svr();
-        init_web_svr();
-        init_monitor_svr();
+        // const tokenInfo = getTokenInfo(
+        //     '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
+        //     conf.solana_rpc_with_metaplex_das_api,
+        // );
+        // logger.info(tokenInfo);
+        // init_logger();
+        // init_conf();
+        // await init_db();
+        // // init_timer_svr();
+        // init_web_svr();
+        // init_monitor_svr();
 
         // // await tokenSwap(
         // //     'https://gmgn.ai',
