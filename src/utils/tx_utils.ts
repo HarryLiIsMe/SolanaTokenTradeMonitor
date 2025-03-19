@@ -39,10 +39,18 @@ async function getTxInfo(
     return txInfo;
 }
 
+function getFee(txRes: VersionedTransactionResponse): number {
+    if (!txRes.meta || !txRes.meta.fee) {
+        return 0;
+    }
+
+    return txRes.meta.fee / LAMPORTS_PER_SOL;
+}
+
 function getPriorityFee(
     txInfo: ParsedTransactionWithMeta,
     txRes: VersionedTransactionResponse,
-): number | null {
+): number {
     const COMPUTE_BUDGET_PROGRAM_ID = new PublicKey(
         'ComputeBudget111111111111111111111111111111',
     );
@@ -71,7 +79,7 @@ function getPriorityFee(
     }
 
     if (computeUnitPrice == null) {
-        return null;
+        return 0;
     }
     if (computeUnitLimit == null) {
         computeUnitLimit = DEFAULT_COMPUTE_UNIT_LIMIT;
@@ -106,15 +114,17 @@ async function checkTransaction(
     //     return false;
     // }
     if (timestamp > txInfo.blockTime!) {
+        logger.warn('check timestamp failed');
         return false;
     }
 
     if (blocknum > txInfo.slot!) {
+        logger.warn('check block number failed');
         return false;
     }
 
     if (txInfo.meta!.err) {
-        logger.info('Transaction Execute Failed');
+        logger.warn('check transaction execute failed');
         return false;
     }
 
@@ -129,11 +139,12 @@ async function checkTransaction(
     const programIds = instructions.map((instruction) =>
         instruction.programId.toBase58(),
     );
-    if (!(await checkInterestProgram(programIds, INTEREST_PROGRAM_ADDRS))) {
+    if (!checkInterestProgram(programIds, INTEREST_PROGRAM_ADDRS)) {
         programIds.forEach((programId) => {
-            // logger.info('instruction:', programId);
+            logger.info('instruction:', programId);
         });
 
+        logger.info('check interest program failed');
         return false;
     }
 
@@ -179,10 +190,10 @@ async function checkTransaction(
 //     return true;
 // }
 
-async function checkInterestProgram(
+function checkInterestProgram(
     programIds: string[],
     interestProgramAddrs: PublicKey[],
-): Promise<boolean> {
+): boolean {
     let hasInterestProgram = false;
     interestProgramAddrs.forEach((interestProgramAddrs) => {
         if (programIds.includes(interestProgramAddrs.toBase58())) {
@@ -352,15 +363,10 @@ async function getTxDetails(
     //     logger.info('Price:', (preBalance - postBalance) / buyAmount);
     // }
 
-    logger.info('Signer:', signer);
+    // logger.info('Signer:', signer);
     const fee = txRes.meta!.fee! / LAMPORTS_PER_SOL;
     let priorityFee = await getPriorityFee(txInfo, txRes);
-    if (priorityFee == null) {
-        priorityFee = 0;
-    }
-    const swapTokenSolDiff = Math.abs(
-        Math.abs(postBalance - preBalance) - fee - priorityFee!,
-    );
+    const swapTokenSolDiff = Math.abs(postBalance - preBalance);
 
     if (signer == seller) {
         return {
@@ -372,7 +378,7 @@ async function getTxDetails(
         };
     } else if (signer == buyer) {
         return {
-            tokenId: sellTokenMint!,
+            tokenId: buyTokenMint!,
             tokenAmount: buyAmount,
             preTokenAmount: preAmount,
             solBalanceChange: swapTokenSolDiff,
@@ -479,6 +485,7 @@ async function getTxDetails(
 
 export {
     getPriorityFee,
+    getFee,
     getTxRes,
     getTxInfo,
     getLastTxHashOfAccount,

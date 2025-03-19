@@ -3,7 +3,7 @@ import { logger } from '@/logger';
 
 function init_timer_svr() {
     setInterval(async () => {
-        logger.info('The time out');
+        logger.info('the time out');
     }, conf.timer_interval_ms);
 
     logger.info('init timer svr success');

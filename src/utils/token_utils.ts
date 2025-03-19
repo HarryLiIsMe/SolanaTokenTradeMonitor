@@ -9,6 +9,7 @@ import { conf } from '@/conf/conf';
 import z from 'zod';
 import { token } from '@coral-xyz/anchor/dist/cjs/utils';
 import { SOL_TOKEN_ADDR, USDT_TOKEN_ADDR } from '@/constants';
+import { logger } from '@/logger';
 
 async function getTokenInfo(programId: string): Promise<
     DasApiAsset & {
@@ -29,11 +30,26 @@ async function getSol2UsdtLastFromCex(): Promise<number | undefined> {
     return solUsdt.last;
 }
 
+async function getUsdt2SolLastFromCex(): Promise<number | undefined> {
+    const okx_cex = new okx();
+    const solUsdt = await okx_cex.fetchTicker('USDT/SOL');
+
+    return solUsdt.last;
+}
+
 async function getSol2UsdtLastFromJupiter(): Promise<number> {
     return await getTokenPairPriceFromJupiter(
         conf.price_api,
         SOL_TOKEN_ADDR,
         USDT_TOKEN_ADDR,
+    );
+}
+
+async function getUsdt2SolLastFromJupiter(): Promise<number> {
+    return await getTokenPairPriceFromJupiter(
+        conf.price_api,
+        USDT_TOKEN_ADDR,
+        SOL_TOKEN_ADDR,
     );
 }
 
@@ -54,15 +70,19 @@ async function getTokenPairPriceFromJupiter(
     token_in: string,
     token_out: string,
 ): Promise<number> {
-    const priceResponseWithVsToken = await fetch(
-        `${price_api}/price/v2?ids=${token_in}&vsToken=${token_out}`,
-    );
+    logger.info(price_api);
+    const reqUrl = `${price_api}/price/v2?ids=${token_in}&vsToken=${token_out}`;
+    // logger.info(reqUrl);
+    const priceResponseWithVsToken = await fetch(reqUrl);
+
+    // logger.info(token_in, token_out);
 
     const price_json = JSON.stringify(
         await priceResponseWithVsToken.json(),
         null,
         2,
     );
+    // logger.info(price_json);
 
     const price: TypePriceJupiter = PriceJupiter.parse(JSON.parse(price_json));
 
@@ -72,6 +92,8 @@ async function getTokenPairPriceFromJupiter(
 export {
     getTokenInfo,
     getSol2UsdtLastFromCex,
+    getUsdt2SolLastFromCex,
+    getUsdt2SolLastFromJupiter,
     getSol2UsdtLastFromJupiter,
     getTokenPairPriceFromJupiter,
 };

@@ -45,31 +45,23 @@ import { init_db } from './model/db_mod';
 import { init_web_svr } from './service/web_svr';
 import { init_timer_svr } from './service/timer_svr';
 import { init_monitor_svr } from './service/monitor_svr';
-import {
-    INTEREST_PROGRAM_ADDRS,
-    SOL_TOKEN_ADDR,
-    USDT_TOKEN_ADDR,
-} from './constants';
+import { SOL_TOKEN_ADDR } from './constants';
 import { tokenSwap } from './utils/swap_utils';
 import {
     getTokenInfo,
     getTokenPairPriceFromJupiter,
 } from './utils/token_utils';
-import {
-    getPriorityFee,
-    getTxDetails,
-    getTxInfo,
-    getTxRes,
-} from './utils/tx_utils';
+import { checkTransaction, getPriorityFee, getTxInfo } from './utils/tx_utils';
 
 async function main() {
     try {
         init_logger();
         init_conf();
-        await init_db();
-        // init_timer_svr();
-        init_web_svr();
-        init_monitor_svr();
+
+        // await init_db();
+        // // init_timer_svr();
+        // init_web_svr();
+        // init_monitor_svr();
 
         // setInterval(async () => {
         //     let txHash = await getLastTransactionSignature(monitorAddress);
@@ -245,10 +237,7 @@ async function getTransactionDetails(txHash: string, solUsdtLast: number) {
     );
 
     if (signer == seller) {
-        const tokenInfo = await getTokenInfo(
-            sellTokenMint!,
-            conf.solana_rpc_with_metaplex_das_api,
-        );
+        const tokenInfo = await getTokenInfo(sellTokenMint!);
 
         let token_decimals = tokenInfo.token_info!.decimals!;
         let decimals = 1;
@@ -284,10 +273,7 @@ async function getTransactionDetails(txHash: string, solUsdtLast: number) {
             0.5,
         );
     } else if (signer == buyer) {
-        const tokenInfo = await getTokenInfo(
-            buyTokenMint!,
-            conf.solana_rpc_with_metaplex_das_api,
-        );
+        const tokenInfo = await getTokenInfo(buyTokenMint!);
 
         logger.info('Buy Operation');
         logger.info(

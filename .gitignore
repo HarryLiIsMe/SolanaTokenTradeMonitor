@@ -3,6 +3,7 @@
 /logger.log
 /misc/conf.json
 /reset.sh
+/.vscode
 !gitkeep
 #package-lock.json
 #yarn.lock

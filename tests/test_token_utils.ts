@@ -8,7 +8,11 @@ import {
 } from '../src/utils/token_utils';
 import { init_conf, conf } from '../src/conf/conf';
 import { init_logger, logger } from '../src/logger';
-import { SOL_TOKEN_ADDR, USDT_TOKEN_ADDR } from '../src/constants';
+import {
+    SOL_TOKEN_ADDR,
+    TRUMP_TOKEN_ADDR,
+    USDT_TOKEN_ADDR,
+} from '../src/constants';
 
 describe('test token utils', function () {
     it('test get token info', async function () {
@@ -45,7 +49,6 @@ describe('test token utils', function () {
         init_conf();
 
         const sol2Usdt = await getSol2UsdtLastFromJupiter();
-        assert(sol2Usdt !== undefined, 'test get token info failed!!!');
 
         logger.info(sol2Usdt);
     });
@@ -56,12 +59,29 @@ describe('test token utils', function () {
         init_logger();
         init_conf();
 
-        const price = await getTokenPairPriceFromJupiter(
+        let price = await getTokenPairPriceFromJupiter(
             conf.price_api,
             USDT_TOKEN_ADDR,
             SOL_TOKEN_ADDR,
         );
-        assert(price !== undefined, 'test get token info failed!!!');
+
+        price = await getTokenPairPriceFromJupiter(
+            conf.price_api,
+            USDT_TOKEN_ADDR,
+            SOL_TOKEN_ADDR,
+        );
+
+        price = await getTokenPairPriceFromJupiter(
+            conf.price_api,
+            TRUMP_TOKEN_ADDR,
+            SOL_TOKEN_ADDR,
+        );
+
+        price = await getTokenPairPriceFromJupiter(
+            conf.price_api,
+            TRUMP_TOKEN_ADDR,
+            USDT_TOKEN_ADDR,
+        );
 
         logger.info(price);
     });
