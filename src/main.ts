@@ -45,41 +45,31 @@ import { init_db } from './model/db_mod';
 import { init_web_svr } from './service/web_svr';
 import { init_timer_svr } from './service/timer_svr';
 import { init_monitor_svr } from './service/monitor_svr';
-import { INTEREST_PROGRAM_ADDRS, SOL_TOKEN_ADDR } from './constants';
+import {
+    INTEREST_PROGRAM_ADDRS,
+    SOL_TOKEN_ADDR,
+    USDT_TOKEN_ADDR,
+} from './constants';
 import { tokenSwap } from './utils/swap_utils';
-import { getTokenInfo } from './utils/token_utils';
-import { getPriorityFee } from './utils/tx_utils';
+import {
+    getTokenInfo,
+    getTokenPairPriceFromJupiter,
+} from './utils/token_utils';
+import {
+    getPriorityFee,
+    getTxDetails,
+    getTxInfo,
+    getTxRes,
+} from './utils/tx_utils';
 
 async function main() {
     try {
-        // const tokenInfo = getTokenInfo(
-        //     '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
-        //     conf.solana_rpc_with_metaplex_das_api,
-        // );
-        // logger.info(tokenInfo);
-        // init_logger();
-        // init_conf();
-        // await init_db();
-        // // init_timer_svr();
-        // init_web_svr();
-        // init_monitor_svr();
-
-        // // await tokenSwap(
-        // //     'https://gmgn.ai',
-        // //     'So11111111111111111111111111111111111111112',
-        // //     '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
-        // //     process.env.SK!,
-        // //     '100',
-        // //     0.5,
-
-        // // );
-
-        // const solUsdtLast = await getSol2UsdtLast();
-        // await getTransactionDetails(
-        //     '4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7',
-        //     solUsdtLast,
-        // );
-        // // await getTokenInfo('6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN');
+        init_logger();
+        init_conf();
+        await init_db();
+        // init_timer_svr();
+        init_web_svr();
+        init_monitor_svr();
 
         // setInterval(async () => {
         //     let txHash = await getLastTransactionSignature(monitorAddress);
@@ -88,7 +78,6 @@ async function main() {
         //         if (await checkTransaction(txHash)) {
         //             logger.info('Tx Hash:', txHash);
         //             const solUsdtLast = await getSol2UsdtLast();
-
         //             await getTransactionDetails(txHash, solUsdtLast);
         //         }
         //         //  else {

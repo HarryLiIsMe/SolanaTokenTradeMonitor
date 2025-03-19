@@ -7,6 +7,7 @@ let conf: Conf;
 const Type1Schema = z.object({
     solana_rpc: z.string(),
     solana_rpc_with_metaplex_das_api: z.string(),
+    swap_api: z.string(),
     listen_port: z.number(),
     sell_min_usdt: z.number(),
     buy_max_usdt: z.number(),
