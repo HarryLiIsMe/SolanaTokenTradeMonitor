@@ -145,7 +145,7 @@ async function swapGetTransactionStatus(
 }
 
 async function tokenSwap(
-    apiHost: string,
+    swapApi: string,
     inputToken: string,
     outputToken: string,
     sk: string,
@@ -169,7 +169,7 @@ async function tokenSwap(
     // swap get quote.
     const wallet = new Wallet(Keypair.fromSecretKey(bs58.decode(sk)));
     const fromAddress = wallet.payer.publicKey.toString();
-    const quoteUrl = `${apiHost}/defi/router/v1/sol/tx/get_swap_route?token_in_address=${inputToken}&token_out_address=${outputToken}&in_amount=${inAmount}&from_address=${fromAddress}&slippage=${slippage}`;
+    const quoteUrl = `${swapApi}/defi/router/v1/sol/tx/get_swap_route?token_in_address=${inputToken}&token_out_address=${outputToken}&in_amount=${inAmount}&from_address=${fromAddress}&slippage=${slippage}`;
     const swapGetQuoteRes = await swapGetQuote(
         quoteUrl,
         inputToken,
@@ -202,7 +202,7 @@ async function tokenSwap(
     // swap send transaction.
     const rawTransaction = swapGetQuoteRes.data.raw_tx.swapTransaction;
     const payer = wallet.payer;
-    const swapSendTransactionUrl = `${apiHost}/defi/router/v1/sol/tx/submit_signed_bundle_transaction`;
+    const swapSendTransactionUrl = `${swapApi}/defi/router/v1/sol/tx/submit_signed_bundle_transaction`;
     const swapSendTransactionRes = await swapSendTransaction(
         swapSendTransactionUrl,
         rawTransaction,
@@ -232,7 +232,7 @@ async function tokenSwap(
     const hash = swapSendTransactionRes.data.tx_hash;
     const lastValidBlockHeight =
         swapGetQuoteRes.data.raw_tx.lastValidBlockHeight;
-    const swapGetTransactionUrl = `${apiHost}/defi/router/v1/sol/tx/get_transaction_status?hash=${hash}&last_valid_height=${lastValidBlockHeight}`;
+    const swapGetTransactionUrl = `${swapApi}/defi/router/v1/sol/tx/get_transaction_status?hash=${hash}&last_valid_height=${lastValidBlockHeight}`;
     const swapGetTransactionStatusRes = await swapGetTransactionStatus(
         swapGetTransactionUrl,
     );

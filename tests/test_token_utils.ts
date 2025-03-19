@@ -1,12 +1,12 @@
 import { describe, it } from 'mocha';
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import {
     getSol2UsdtLastFromCex,
     getSol2UsdtLastFromJupiter,
     getTokenInfo,
     getTokenPairPriceFromJupiter,
 } from '../src/utils/token_utils';
-import { init_conf } from '../src/conf/conf';
+import { init_conf, conf } from '../src/conf/conf';
 import { init_logger, logger } from '../src/logger';
 import { SOL_TOKEN_ADDR, USDT_TOKEN_ADDR } from '../src/constants';
 
@@ -57,6 +57,7 @@ describe('test token utils', function () {
         init_conf();
 
         const price = await getTokenPairPriceFromJupiter(
+            conf.price_api,
             USDT_TOKEN_ADDR,
             SOL_TOKEN_ADDR,
         );

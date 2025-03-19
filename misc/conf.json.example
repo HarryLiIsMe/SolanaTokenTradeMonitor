@@ -1,9 +1,10 @@
 {
-    "solana_rpc_with_metaplex_das_api": "https://mainnet.helius-rpc.com/?api-key=eae2c1db-4332-4ba4-8149-c90bc318acf6",
+    "solana_rpc": "",
+    "solana_rpc_with_metaplex_das_api": "",
     "swap_api": "https://gmgn.ai",
     "listen_port": 8888,
-    "sell_min_usdt": "30",
-    "buy_max_usdt": "1000",
+    "sell_min_usdt": 30,
+    "buy_max_usdt": 1000,
     "db_name": "db_follow",
     "db_host": "39.107.125.196",
     "db_port": 5432,

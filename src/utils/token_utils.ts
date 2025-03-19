@@ -30,7 +30,11 @@ async function getSol2UsdtLastFromCex(): Promise<number | undefined> {
 }
 
 async function getSol2UsdtLastFromJupiter(): Promise<number> {
-    return await getTokenPairPriceFromJupiter(SOL_TOKEN_ADDR, USDT_TOKEN_ADDR);
+    return await getTokenPairPriceFromJupiter(
+        conf.price_api,
+        SOL_TOKEN_ADDR,
+        USDT_TOKEN_ADDR,
+    );
 }
 
 const PriceData = z.object({
@@ -46,11 +50,12 @@ const PriceJupiter = z.object({
 type TypePriceJupiter = z.infer<typeof PriceJupiter>;
 
 async function getTokenPairPriceFromJupiter(
+    price_api: string,
     token_in: string,
     token_out: string,
 ): Promise<number> {
     const priceResponseWithVsToken = await fetch(
-        `https://api.jup.ag/price/v2?ids=${token_in}&vsToken=${token_out}`,
+        `${price_api}/price/v2?ids=${token_in}&vsToken=${token_out}`,
     );
 
     const price_json = JSON.stringify(
