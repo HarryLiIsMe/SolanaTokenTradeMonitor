@@ -8,6 +8,8 @@ import {
 } from '@solana/web3.js';
 import { Wallet } from '@coral-xyz/anchor';
 
+import { ethers } from 'ethers';
+
 import {
     dasApi,
     DasApiAsset,
@@ -52,16 +54,16 @@ import {
     getTokenPairPriceFromJupiter,
 } from './utils/token_utils';
 import { checkTransaction, getPriorityFee, getTxInfo } from './utils/tx_utils';
+import { v4 as uuid } from 'uuid';
 
 async function main() {
     try {
         init_logger();
         init_conf();
-
-        // await init_db();
-        // // init_timer_svr();
-        // init_web_svr();
-        // init_monitor_svr();
+        await init_db();
+        // init_timer_svr();
+        init_web_svr();
+        init_monitor_svr();
 
         // setInterval(async () => {
         //     let txHash = await getLastTransactionSignature(monitorAddress);

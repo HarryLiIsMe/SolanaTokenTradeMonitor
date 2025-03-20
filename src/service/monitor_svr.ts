@@ -1,6 +1,6 @@
 import { conf } from '@/conf/conf';
 import { logger } from '@/logger';
-import { follow_positions, followed_usrs } from '@/model/db_mod';
+import { follow_positions, follow_txs, followed_usrs } from '@/model/db_mod';
 import {
     checkTransaction,
     getLastTxHashOfAccount,
@@ -18,6 +18,7 @@ import {
     getUsdt2SolLastFromJupiter,
 } from '@/utils/token_utils';
 import { USDT_TOKEN_ADDR } from '@/constants';
+import { v4 as uuid } from 'uuid';
 
 async function init_monitor_svr() {
     const conn = new Connection(conf.solana_rpc);
@@ -116,12 +117,25 @@ async function init_monitor_svr() {
                     }
 
                     let newAmount = 0;
-
                     if (tokenAmount <= buyMaxPositionValueTokenId) {
                         newAmount = tokenAmount;
                     } else {
                         newAmount = buyMaxPositionValueTokenId;
                     }
+
+                    logger.info('buy create position: ', newAmount);
+                    const follow_tx_hash = uuid();
+                    follow_txs.set(follow_tx_hash, {
+                        following_tx_hash: follow_tx_hash,
+                        followed_tx_hash: txHash,
+                        followed_account_addr: followed_addr.toBase58(),
+                        token_id: txDetails.tokenId,
+                        token_symbol: '',
+                        amount: newAmount,
+                        trade_direct: true,
+                        tms: Math.floor(Date.now() / 1000),
+                        block_number: txInfo.blockTime! + 1,
+                    });
 
                     follow_positions.set(
                         followed_usr.account_addr + txDetails.tokenId,
@@ -148,16 +162,73 @@ async function init_monitor_svr() {
                             (follow_position.amount * txDetails.tokenAmount) /
                             txDetails.preTokenAmount;
                         if (sellAmount <= sellMinPositionValueTokenId) {
+                            logger.warn(
+                                'less than sell min position value tokenId',
+                            );
                             continue;
                         }
+                        logger.info('sell position: ', sellAmount);
+                        const follow_tx_hash = uuid();
+                        follow_txs.set(follow_tx_hash, {
+                            following_tx_hash: follow_tx_hash,
+                            followed_tx_hash: txHash,
+                            followed_account_addr: followed_addr.toBase58(),
+                            token_id: txDetails.tokenId,
+                            token_symbol: '',
+                            amount: sellAmount,
+                            trade_direct: false,
+                            tms: Math.floor(Date.now() / 1000),
+                            block_number: txInfo.blockTime! + 1,
+                        });
+
                         follow_position.amount =
                             follow_position.amount - sellAmount;
                     } else {
+                        if (
+                            follow_position.amount >= buyMaxPositionValueTokenId
+                        ) {
+                            logger.warn(
+                                'greater than buy max position value tokenId',
+                            );
+                            continue;
+                        }
+
                         const newAmount = follow_position.amount + tokenAmount;
                         if (newAmount <= buyMaxPositionValueTokenId) {
                             follow_position.amount = newAmount;
+                            logger.info('buy position: ', tokenAmount);
+                            const follow_tx_hash = uuid();
+                            follow_txs.set(follow_tx_hash, {
+                                following_tx_hash: follow_tx_hash,
+                                followed_tx_hash: txHash,
+                                followed_account_addr: followed_addr.toBase58(),
+                                token_id: txDetails.tokenId,
+                                token_symbol: '',
+                                amount: tokenAmount,
+                                trade_direct: true,
+                                tms: Math.floor(Date.now() / 1000),
+                                block_number: txInfo.blockTime! + 1,
+                            });
                         } else {
                             follow_position.amount = buyMaxPositionValueTokenId;
+                            logger.info(
+                                'buy position: ',
+                                buyMaxPositionValueTokenId,
+                            );
+                            const follow_tx_hash = uuid();
+                            follow_txs.set(follow_tx_hash, {
+                                following_tx_hash: follow_tx_hash,
+                                followed_tx_hash: txHash,
+                                followed_account_addr: followed_addr.toBase58(),
+                                token_id: txDetails.tokenId,
+                                token_symbol: '',
+                                amount:
+                                    buyMaxPositionValueTokenId -
+                                    follow_position.amount,
+                                trade_direct: true,
+                                tms: Math.floor(Date.now() / 1000),
+                                block_number: txInfo.blockTime! + 1,
+                            });
                         }
                     }
                 }

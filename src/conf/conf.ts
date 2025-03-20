@@ -4,7 +4,7 @@ import z from 'zod';
 
 let conf: Conf;
 
-const Type1Schema = z.object({
+const ConfSchema = z.object({
     solana_rpc: z.string(),
     solana_rpc_with_metaplex_das_api: z.string(),
     swap_api: z.string(),
@@ -22,11 +22,11 @@ const Type1Schema = z.object({
     timer_interval_ms: z.number(),
     monitor_interval_ms: z.number(),
 });
-type Conf = z.infer<typeof Type1Schema>;
+type Conf = z.infer<typeof ConfSchema>;
 
 function init_conf() {
     const json_str: string = readFileSync('./misc/conf.json', 'utf-8');
-    conf = Type1Schema.parse(JSON.parse(json_str));
+    conf = ConfSchema.parse(JSON.parse(json_str));
 
     logger.info('init conf success');
 }

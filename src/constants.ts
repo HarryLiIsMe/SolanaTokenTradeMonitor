@@ -45,6 +45,7 @@ const aldrinV1 = new PublicKey('AMM55ShdkoGRB5jVYPjWziwk8m5MpwyDgsMWHaMSQWH6');
 const aldrinV2 = new PublicKey('CURVGoZn8zycx6FXwwevgBTB2gVvdbGTEpvMJDbgs2t4');
 const obricV2 = new PublicKey('obriQD1zbpyLz95G5n7nJe6a4DPjpFwa5XYPoNm113y');
 const sanctum = new PublicKey('5ocnV1qiCgaQR8Jb8xWnVbApfaygJ8tNoZfgPwsgx9kx');
+const imageOrca = new PublicKey('FAqh648xeeaTqL7du49sztp9nfj5PjRQrfvaMccyd9cz');
 
 const jupiterAggregatorV6 = new PublicKey(
     'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',
@@ -76,6 +77,7 @@ const INTEREST_PROGRAM_ADDRS: PublicKey[] = [
     obricV2,
     sanctum,
     fluxBeam,
+    imageOrca,
 ];
 
 const MICRO_LAMPORTS_PER_LAMPORT = 1e6;

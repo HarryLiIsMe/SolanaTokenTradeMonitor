@@ -68,7 +68,9 @@ class FollowTx {
         this.amount = 0;
         this.token_symbol = '';
         this.amount = 0;
-        this.trade_direct = true;
+        this.trade_direct = false;
+        this.tms = 0;
+        this.block_number = 0;
     }
 
     following_tx_hash: string;
@@ -79,6 +81,8 @@ class FollowTx {
     amount: number;
     // buy=true or sell=false.
     trade_direct: boolean;
+    tms: number;
+    block_number: number;
 }
 
 // key = account_addr.
