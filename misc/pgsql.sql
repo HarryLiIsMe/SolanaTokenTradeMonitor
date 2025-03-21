@@ -13,17 +13,33 @@ CREATE TABLE tb_followed_usr (
     is_disabled BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE tb_follow_position (
-    -- follow_account_addr TEXT NOT NULL,
+CREATE TABLE tb_followed_position (
     followed_account_addr TEXT NOT NULL,
     token_id TEXT NOT NULL,
     amount BIGINT NOT NULL,
+
     PRIMARY KEY (followed_account_addr, token_id),
     FOREIGN KEY (followed_account_addr) REFERENCES tb_followed_usr(account_addr)
 );
 
-CREATE INDEX idx_followed_account_addr ON tb_follow_position(followed_account_addr);
-CREATE INDEX idx_token_id ON tb_follow_position(token_id);
+CREATE TABLE tb_followed_tx (
+    following_tx_hash: TEXT PRIMARY KEY,
+    followed_tx_hash: TEXT NOT NULL,
+    followed_account_addr: TEXT NOT NULL,
+    token_id: TEXT NOT NULL,
+    amount: BIGINT NOT NULL,
+    trade_direct: BOOLEAN NOT NULL DEFAULT FALSE,
+    tms: TIMESTAMP NOT NULL,
+    block_number:  BIGINT NOT NULL,
+
+    FOREIGN KEY (followed_account_addr) REFERENCES tb_followed_usr(account_addr)
+);
+
+CREATE INDEX idx_followed_account_addr_on_position ON tb_followed_position(followed_account_addr);
+CREATE INDEX idx_token_id_on_position ON tb_followed_position(token_id);
+CREATE INDEX idx_followed_tx_hash_on_tx ON tb_followed_tx(followed_tx_hash);
+CREATE INDEX idx_followed_account_addr_on_tx ON tb_followed_tx(followed_account_addr);
+CREATE INDEX idx_token_id_on_tx ON tb_followed_tx(token_id);
 
 COMMIT;
 

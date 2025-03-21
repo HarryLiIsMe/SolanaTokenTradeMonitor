@@ -3,6 +3,7 @@ import { PublicKey } from '@solana/web3.js';
 const pumpFun = new PublicKey('6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P');
 const moonshot = new PublicKey('MoonCVVNZFSYkqNXP6bxHLPL6QQJiMagDL3qcqUQTrG');
 
+const pumpFunAMM = new PublicKey('pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA');
 const raydiumLiquidityPoolV4 = new PublicKey(
     '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8',
 );
@@ -57,6 +58,7 @@ const oKXDEXAggregationRouterV2 = new PublicKey(
 const INTEREST_PROGRAM_ADDRS: PublicKey[] = [
     pumpFun,
     moonshot,
+    pumpFunAMM,
     raydiumLiquidityPoolV4,
     raydiumConcentratedLiquidity,
     raydiumCPMM,
