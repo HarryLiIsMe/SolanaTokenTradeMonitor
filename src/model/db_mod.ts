@@ -31,15 +31,7 @@ async function load_follow_txs_from_db() {
     return new Map();
 }
 
-class FollowedUsr {
-    constructor() {
-        this.account_addr = '';
-        this.last_tx_hash = '';
-        this.tms = 1;
-        this.block_number = 1;
-        this.is_disabled = false;
-    }
-
+type FollowedUsr = {
     account_addr: string;
     last_tx_hash: string;
     tms: number;
@@ -47,38 +39,19 @@ class FollowedUsr {
     is_disabled: boolean;
 }
 
-class FollowPosition {
-    constructor() {
-        this.followed_account_addr = '';
-        this.token_id = '';
-        this.amount = 0;
-    }
-
+type FollowPosition = {
     followed_account_addr: string;
     token_id: string;
     amount: number;
 }
 
-class FollowTx {
-    constructor() {
-        this.following_tx_hash = '';
-        this.followed_tx_hash = '';
-        this.followed_account_addr = '';
-        this.token_id = '';
-        this.amount = 0;
-        this.token_symbol = '';
-        this.amount = 0;
-        this.trade_direct = false;
-        this.tms = 0;
-        this.block_number = 0;
-    }
-
+type FollowTx = {
     following_tx_hash: string;
     followed_tx_hash: string;
     followed_account_addr: string;
     token_id: string;
-    token_symbol: string;
     amount: number;
+    // price_usdt: number;
     // buy=true or sell=false.
     trade_direct: boolean;
     tms: number;
