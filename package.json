@@ -19,6 +19,7 @@
 		"@metaplex-foundation/mpl-token-metadata": "^3.4.0",
 		"@metaplex-foundation/umi": "^1.1.1",
 		"@metaplex-foundation/umi-bundle-defaults": "^1.1.1",
+		"@solana/spl-token": "^0.4.13",
 		"@solana/web3.js": "^1.98.0",
 		"@triton-one/yellowstone-grpc": "^3.0.0",
 		"@types/express": "^5.0.0",

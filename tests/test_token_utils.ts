@@ -3,7 +3,8 @@ import { assert } from 'chai';
 import {
     getSol2UsdtLastFromCex,
     getSol2UsdtLastFromJupiter,
-    getTokenInfo,
+    getTokenInfo1,
+    getTokenInfo2,
     getTokenPairPriceFromJupiter,
 } from '../src/utils/token_utils';
 import { init_conf, conf } from '../src/conf/conf';
@@ -13,21 +14,30 @@ import {
     TRUMP_TOKEN_ADDR,
     USDT_TOKEN_ADDR,
 } from '../src/constants';
+import { Connection } from '@solana/web3.js';
 
 describe('test token utils', function () {
     it('test get token info', async function () {
-        this.timeout(2000);
+        this.timeout(4000);
 
         init_logger();
         init_conf();
 
-        const tokenInfo = await getTokenInfo(
+        const tokenInfo1 = await getTokenInfo1(
             '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
         );
         assert(
-            tokenInfo.token_info !== undefined,
-            'test get token info failed!!!',
+            tokenInfo1.token_info !== undefined,
+            'test get token info1 failed!!!',
         );
+
+        const conn = new Connection(conf.solana_rpc);
+        const tokenInfo2 = await getTokenInfo2(
+            conn,
+            '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN',
+        );
+        logger.info(tokenInfo2);
+        assert(tokenInfo2.decimals > 0, 'test get token info2 failed!!!');
     });
 
     it('test get sol to usdt last from cex', async function () {

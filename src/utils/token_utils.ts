@@ -10,17 +10,28 @@ import z from 'zod';
 import { token } from '@coral-xyz/anchor/dist/cjs/utils';
 import { SOL_TOKEN_ADDR, USDT_TOKEN_ADDR } from '@/constants';
 import { logger } from '@/logger';
+import { getMint, Mint } from '@solana/spl-token';
+import { Connection, PublicKey } from '@solana/web3.js';
 
-async function getTokenInfo(programId: string): Promise<
+async function getTokenInfo1(tokenProgramId: string): Promise<
     DasApiAsset & {
         token_info?: { decimals?: number };
     }
 > {
     const umi = createUmi(conf.solana_rpc_with_metaplex_das_api).use(dasApi());
-    const assetId = publicKey(programId);
+    const assetId = publicKey(tokenProgramId);
 
     const assetInfo = await umi.rpc.getAsset(assetId);
     return assetInfo;
+}
+
+async function getTokenInfo2(
+    conn: Connection,
+    tokenProgramId: string,
+): Promise<Mint> {
+    const mintPublicKey = new PublicKey(tokenProgramId);
+    const mintInfo = await getMint(conn, mintPublicKey);
+    return mintInfo;
 }
 
 async function getSol2UsdtLastFromCex(): Promise<number | undefined> {
@@ -90,7 +101,8 @@ async function getTokenPairPriceFromJupiter(
 }
 
 export {
-    getTokenInfo,
+    getTokenInfo1,
+    getTokenInfo2,
     getSol2UsdtLastFromCex,
     getUsdt2SolLastFromCex,
     getUsdt2SolLastFromJupiter,
