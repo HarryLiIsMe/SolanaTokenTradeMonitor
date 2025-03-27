@@ -5,7 +5,9 @@ import {
     checkTransaction,
     getLastTxHashOfAccount,
     getPriorityFee,
+    getTradeToken,
     getTxDetails,
+    getTxDetails2,
     getTxInfo,
     getTxRes,
 } from '@/utils/tx_utils';
@@ -56,7 +58,7 @@ async function init_monitor_svr() {
                     continue;
                 }
 
-                logger.info(txHash, followed_usr.last_tx_hash);
+                // logger.info(txHash, followed_usr.last_tx_hash);
 
                 const txInfo = await getTxInfo(conn, txHash);
                 const txRes = await getTxRes(conn, txHash);
@@ -64,8 +66,6 @@ async function init_monitor_svr() {
                     logger.warn('get tx info or\\and get tx response failed');
                     continue;
                 }
-                const priorityFee = getPriorityFee(txInfo, txRes);
-                const fee = getPriorityFee(txInfo, txRes);
                 if (
                     !(await checkTransaction(
                         txInfo,
@@ -73,38 +73,62 @@ async function init_monitor_svr() {
                         followed_usr.block_number,
                     ))
                 ) {
-                    logger.warn('check transaction failed');
+                    // logger.warn('check transaction failed');
                     continue;
                 }
                 followed_usr.tms = txInfo.blockTime!;
                 followed_usr.block_number = txInfo.slot;
                 followed_usr.last_tx_hash = txHash;
 
-                const txDetails = await getTxDetails(
+                const txDetails = await getTxDetails2(
                     followed_addr,
                     txInfo,
                     txRes,
                 );
                 if (!txDetails) {
+                    logger.warn('getTxDetails failed');
                     continue;
                 }
-                logger.info(txDetails);
+                // logger.info(txDetails);
 
-                const solBalanceChangeWithoutSomeFee =
-                    txDetails.solBalanceChange - fee - priorityFee;
-                const tokenAmount = txDetails.tokenAmount;
-                if (tokenAmount == 0) {
-                    logger.error('tokenAmount err:', tokenAmount);
+                const priorityFee = getPriorityFee(txInfo, txRes);
+                const fee = getPriorityFee(txInfo, txRes);
+
+                const txTradeInfo = getTradeToken(txDetails, fee, priorityFee);
+                if (!txTradeInfo) {
+                    logger.warn('getTradeToken failed');
                     continue;
                 }
+                logger.info(txTradeInfo);
+
+                // const solBalanceChangeWithoutSomeFee =
+                //     txDetails.solBalanceChange - fee - priorityFee;
+                // const tokenAmount = txDetails.tokenAmount;
+                // if (tokenAmount == 0) {
+                //     logger.error('tokenAmount err:', tokenAmount);
+                //     continue;
+                // }
+
+                const tradeTokenId =
+                    txTradeInfo.tradeDirect == 'buy'
+                        ? txTradeInfo.outToken.tokenId
+                        : txTradeInfo.inToken.tokenId;
+                const tokenAmount =
+                    txTradeInfo.tradeDirect == 'buy'
+                        ? txTradeInfo.outToken.amount
+                        : txTradeInfo.inToken.amount;
+                const preTokenAmount =
+                    txTradeInfo.tradeDirect == 'buy'
+                        ? txTradeInfo.outToken.preTokenAmount
+                        : txTradeInfo.inToken.preTokenAmount;
 
                 const follow_position = follow_positions.get(
-                    followed_usr.account_addr + txDetails.tokenId,
+                    followed_usr.account_addr + tradeTokenId,
                 );
                 const usdt2TokenIdPrice = await getTokenPairPriceFromJupiter(
                     conf.price_api,
                     USDT_TOKEN_ADDR,
-                    txDetails.tokenId,
+                    tradeTokenId,
                 );
                 const buyMaxPositionValueTokenId =
                     conf.buy_max_position_value_usdt * usdt2TokenIdPrice;
@@ -112,7 +136,7 @@ async function init_monitor_svr() {
                     conf.sell_min_position_value_usdt * usdt2TokenIdPrice;
 
                 if (!follow_position) {
-                    if (txDetails.tradeDirect == 'sell') {
+                    if (txTradeInfo.tradeDirect == 'sell') {
                         continue;
                     }
 
@@ -129,8 +153,8 @@ async function init_monitor_svr() {
                         following_tx_hash: follow_tx_hash,
                         followed_tx_hash: txHash,
                         followed_account_addr: followed_addr.toBase58(),
-                        token_id: txDetails.tokenId,
-                        token_symbol: '',
+                        token_id: tradeTokenId,
+                        // token_symbol: '',
                         amount: newAmount,
                         trade_direct: true,
                         tms: Math.floor(Date.now() / 1000),
@@ -138,29 +162,26 @@ async function init_monitor_svr() {
                     });
 
                     follow_positions.set(
-                        followed_usr.account_addr + txDetails.tokenId,
+                        followed_usr.account_addr + tradeTokenId,
                         {
                             followed_account_addr: followed_usr.account_addr,
-                            token_id: txDetails.tokenId,
+                            token_id: tradeTokenId,
                             amount: newAmount,
                         },
                     );
                 } else {
-                    if (txDetails.tradeDirect == 'sell') {
+                    if (txTradeInfo.tradeDirect == 'sell') {
                         if (
-                            txDetails.preTokenAmount == 0 ||
-                            txDetails.preTokenAmount <= txDetails.tokenAmount
+                            preTokenAmount == 0 ||
+                            preTokenAmount <= tokenAmount
                         ) {
-                            logger.error(
-                                'preTokenAmount err:',
-                                txDetails.preTokenAmount,
-                            );
+                            logger.error('preTokenAmount err:', preTokenAmount);
                             continue;
                         }
 
                         const sellAmount =
-                            (follow_position.amount * txDetails.tokenAmount) /
-                            txDetails.preTokenAmount;
+                            (follow_position.amount * tokenAmount) /
+                            preTokenAmount;
                         if (sellAmount <= sellMinPositionValueTokenId) {
                             logger.warn(
                                 'less than sell min position value tokenId',
@@ -173,8 +194,8 @@ async function init_monitor_svr() {
                             following_tx_hash: follow_tx_hash,
                             followed_tx_hash: txHash,
                             followed_account_addr: followed_addr.toBase58(),
-                            token_id: txDetails.tokenId,
-                            token_symbol: '',
+                            token_id: tradeTokenId,
+                            // token_symbol: '',
                             amount: sellAmount,
                             trade_direct: false,
                             tms: Math.floor(Date.now() / 1000),
@@ -202,8 +223,8 @@ async function init_monitor_svr() {
                                 following_tx_hash: follow_tx_hash,
                                 followed_tx_hash: txHash,
                                 followed_account_addr: followed_addr.toBase58(),
-                                token_id: txDetails.tokenId,
-                                token_symbol: '',
+                                token_id: tradeTokenId,
+                                // token_symbol: '',
                                 amount: tokenAmount,
                                 trade_direct: true,
                                 tms: Math.floor(Date.now() / 1000),
@@ -220,8 +241,8 @@ async function init_monitor_svr() {
                                 following_tx_hash: follow_tx_hash,
                                 followed_tx_hash: txHash,
                                 followed_account_addr: followed_addr.toBase58(),
-                                token_id: txDetails.tokenId,
-                                token_symbol: '',
+                                token_id: tradeTokenId,
+                                // token_symbol: '',
                                 amount:
                                     buyMaxPositionValueTokenId -
                                     follow_position.amount,

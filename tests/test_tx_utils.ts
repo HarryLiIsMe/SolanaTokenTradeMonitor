@@ -57,21 +57,17 @@ describe('test tx utils', function () {
     });
 
     it('test get tx details', async function () {
-        this.timeout(2000);
+        this.timeout(3000);
 
         init_logger();
         init_conf();
 
+        const tx_hash =
+            '4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7';
         const conn = new Connection(conf.solana_rpc);
-        const txInfo = await getTxInfo(
-            conn,
-            '4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7',
-        );
+        const txInfo = await getTxInfo(conn, tx_hash);
         assert(txInfo !== null, 'test get tx info failed!!!');
-        const txRes = await getTxRes(
-            conn,
-            '4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7',
-        );
+        const txRes = await getTxRes(conn, tx_hash);
         assert(txRes !== null, 'test get tx res failed!!!');
 
         const txDetails = await getTxDetails(
@@ -109,16 +105,12 @@ describe('test tx utils', function () {
         init_logger();
         init_conf();
 
+        let tx_hash =
+            '4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7';
         const conn = new Connection(conf.solana_rpc);
-        let txInfo = await getTxInfo(
-            conn,
-            '4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7',
-        );
+        let txInfo = await getTxInfo(conn, tx_hash);
         assert(txInfo !== null, 'test get tx info failed!!!');
-        let txRes = await getTxRes(
-            conn,
-            '4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7',
-        );
+        let txRes = await getTxRes(conn, tx_hash);
         assert(txRes !== null, 'test get tx res failed!!!');
 
         let fee = getFee(txRes);
@@ -129,15 +121,11 @@ describe('test tx utils', function () {
             'test get priority fee failed!!!',
         );
 
-        txInfo = await getTxInfo(
-            conn,
-            '2gGyfgPF6T6QSZ9Cj1M6tzEVhwgDkcr1wnauwSZP65zMousaJg2QfCNH5KyfYu2G65ZYh49hg24xXyy6TMUnr6gZ',
-        );
+        tx_hash =
+            '2gGyfgPF6T6QSZ9Cj1M6tzEVhwgDkcr1wnauwSZP65zMousaJg2QfCNH5KyfYu2G65ZYh49hg24xXyy6TMUnr6gZ';
+        txInfo = await getTxInfo(conn, tx_hash);
         assert(txInfo !== null, 'test get tx info failed!!!');
-        txRes = await getTxRes(
-            conn,
-            '2gGyfgPF6T6QSZ9Cj1M6tzEVhwgDkcr1wnauwSZP65zMousaJg2QfCNH5KyfYu2G65ZYh49hg24xXyy6TMUnr6gZ',
-        );
+        txRes = await getTxRes(conn, tx_hash);
         assert(txRes !== null, 'test get tx res failed!!!');
 
         fee = getFee(txRes);
@@ -148,15 +136,11 @@ describe('test tx utils', function () {
             'test get priority fee failed!!!',
         );
 
-        txInfo = await getTxInfo(
-            conn,
-            '4btx9adCwjog2kjbnaaKjTa9ggRnEtcHnEQ9jZNwdZn36F8MQ3ECTuKADhLPHyFBo7sfX6ta7QUY7tUXiTdtGo3U',
-        );
+        tx_hash =
+            '4btx9adCwjog2kjbnaaKjTa9ggRnEtcHnEQ9jZNwdZn36F8MQ3ECTuKADhLPHyFBo7sfX6ta7QUY7tUXiTdtGo3U';
+        txInfo = await getTxInfo(conn, tx_hash);
         assert(txInfo !== null, 'test get tx info failed!!!');
-        txRes = await getTxRes(
-            conn,
-            '4btx9adCwjog2kjbnaaKjTa9ggRnEtcHnEQ9jZNwdZn36F8MQ3ECTuKADhLPHyFBo7sfX6ta7QUY7tUXiTdtGo3U',
-        );
+        txRes = await getTxRes(conn, tx_hash);
         assert(txRes !== null, 'test get tx res failed!!!');
 
         fee = getFee(txRes);
@@ -165,15 +149,11 @@ describe('test tx utils', function () {
         assert(Math.abs(fee - 0.000005) < 1e-5, 'test get fee failed!!!');
         assert(Math.abs(priorityFee) < 1e-5, 'test get priority fee failed!!!');
 
-        txInfo = await getTxInfo(
-            conn,
-            'JC4E6thu7XwdAWPzph9kW7wUhegDD4ATMe372vwgczurGsCrV8cLoQXihADTz1JmmJKyX4DKKJEqtoXWGCQuGhi',
-        );
+        tx_hash =
+            'JC4E6thu7XwdAWPzph9kW7wUhegDD4ATMe372vwgczurGsCrV8cLoQXihADTz1JmmJKyX4DKKJEqtoXWGCQuGhi';
+        txInfo = await getTxInfo(conn, tx_hash);
         assert(txInfo !== null, 'test get tx info failed!!!');
-        txRes = await getTxRes(
-            conn,
-            'JC4E6thu7XwdAWPzph9kW7wUhegDD4ATMe372vwgczurGsCrV8cLoQXihADTz1JmmJKyX4DKKJEqtoXWGCQuGhi',
-        );
+        txRes = await getTxRes(conn, tx_hash);
         assert(txRes !== null, 'test get tx res failed!!!');
 
         fee = getFee(txRes);

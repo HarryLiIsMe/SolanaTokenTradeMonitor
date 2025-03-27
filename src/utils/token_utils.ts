@@ -8,7 +8,7 @@ import { okx } from 'ccxt';
 import { conf } from '@/conf/conf';
 import z from 'zod';
 import { token } from '@coral-xyz/anchor/dist/cjs/utils';
-import { SOL_TOKEN_ADDR, USDT_TOKEN_ADDR } from '@/constants';
+import { WSOL_TOKEN_ADDR, USDT_TOKEN_ADDR } from '@/constants';
 import { logger } from '@/logger';
 import { getMint, Mint } from '@solana/spl-token';
 import { Connection, PublicKey } from '@solana/web3.js';
@@ -51,7 +51,7 @@ async function getUsdt2SolLastFromCex(): Promise<number | undefined> {
 async function getSol2UsdtLastFromJupiter(): Promise<number> {
     return await getTokenPairPriceFromJupiter(
         conf.price_api,
-        SOL_TOKEN_ADDR,
+        WSOL_TOKEN_ADDR,
         USDT_TOKEN_ADDR,
     );
 }
@@ -60,7 +60,7 @@ async function getUsdt2SolLastFromJupiter(): Promise<number> {
     return await getTokenPairPriceFromJupiter(
         conf.price_api,
         USDT_TOKEN_ADDR,
-        SOL_TOKEN_ADDR,
+        WSOL_TOKEN_ADDR,
     );
 }
 
@@ -81,7 +81,7 @@ async function getTokenPairPriceFromJupiter(
     token_in: string,
     token_out: string,
 ): Promise<number> {
-    logger.info(price_api);
+    // logger.info(price_api);
     const reqUrl = `${price_api}/price/v2?ids=${token_in}&vsToken=${token_out}`;
     // logger.info(reqUrl);
     const priceResponseWithVsToken = await fetch(reqUrl);

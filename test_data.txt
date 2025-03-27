@@ -1,0 +1,17 @@
+tx hash: 
+// buy. user 3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC. gmgn. token store.
+4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7
+// buy. user 3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC. gmgn. token store.
+34uqfuidiiqcW6aKWaSwY4p78Mg6uyS8a51hti8EQQVx8Z5o7xuZvMztodwE2r6FGYzEXrbL9qBpqb3HqpwjKaiq
+// sell. user 3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC.
+f2pYwWgR5osuvgTcqYGiResM5aSUeGqJSS4WLz8HSPykDeroEpvdrcb18KBFFE8XZBFuHrfuddvuDWBCQxpYWaN
+// buy. user 3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC.
+515J4Czj13gEkiYry5k8v18Cx4zTf4nXAjP1KDNAKEJoyRmqymr1moNf3jBTDRfVnKs948SvpWf7cjuLeQAkz41X
+// buy. user As7HjL7dzzvbRbaD3WCun47robib2kmAKRXMvjHkSMB5. token amore ai.
+4txZJoisAyJPovwH9ex6oCnzaYxGJcC4kLHUbbJF9uopWSY6fGVA3Pofxu772E1ZanavmGk9WJdtHc8cgAycnho9
+// buy  .user As7HjL7dzzvbRbaD3WCun47robib2kmAKRXMvjHkSMB5. token moon.
+2gGyfgPF6T6QSZ9Cj1M6tzEVhwgDkcr1wnauwSZP65zMousaJg2QfCNH5KyfYu2G65ZYh49hg24xXyy6TMUnr6gZ
+
+user account addr: 
+As7HjL7dzzvbRbaD3WCun47robib2kmAKRXMvjHkSMB5
+3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC

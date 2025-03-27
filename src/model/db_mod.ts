@@ -37,13 +37,13 @@ type FollowedUsr = {
     tms: number;
     block_number: number;
     is_disabled: boolean;
-}
+};
 
 type FollowPosition = {
     followed_account_addr: string;
     token_id: string;
     amount: number;
-}
+};
 
 type FollowTx = {
     following_tx_hash: string;
@@ -56,7 +56,7 @@ type FollowTx = {
     trade_direct: boolean;
     tms: number;
     block_number: number;
-}
+};
 
 // key = account_addr.
 let followed_usrs: Map<string, FollowedUsr> = new Map();

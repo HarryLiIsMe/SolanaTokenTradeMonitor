@@ -3,7 +3,9 @@ import {
     DEFAULT_COMPUTE_UNIT_LIMIT,
     INTEREST_PROGRAM_ADDRS,
     MICRO_LAMPORTS_PER_LAMPORT,
-    SOL_TOKEN_ADDR,
+    USDC_TOKEN_ADDR,
+    USDT_TOKEN_ADDR,
+    WSOL_TOKEN_ADDR,
 } from '@/constants';
 import { logger } from '@/logger';
 import {
@@ -13,7 +15,9 @@ import {
     PublicKey,
     VersionedTransactionResponse,
 } from '@solana/web3.js';
-import { getTokenInfo } from './token_utils';
+import { getTokenInfo1 } from './token_utils';
+import { sol } from '@metaplex-foundation/umi';
+import { log } from 'console';
 
 async function getTxRes(
     conn: Connection,
@@ -44,7 +48,7 @@ function getFee(txRes: VersionedTransactionResponse): number {
         return 0;
     }
 
-    return txRes.meta.fee / LAMPORTS_PER_SOL;
+    return Math.abs(txRes.meta.fee / LAMPORTS_PER_SOL);
 }
 
 function getPriorityFee(
@@ -85,10 +89,10 @@ function getPriorityFee(
         computeUnitLimit = DEFAULT_COMPUTE_UNIT_LIMIT;
     }
 
-    return (
+    return Math.abs(
         (computeUnitLimit * computeUnitPrice) /
-        LAMPORTS_PER_SOL /
-        MICRO_LAMPORTS_PER_LAMPORT
+            LAMPORTS_PER_SOL /
+            MICRO_LAMPORTS_PER_LAMPORT,
     );
 }
 
@@ -141,10 +145,10 @@ async function checkTransaction(
     );
     if (!checkInterestProgram(programIds, INTEREST_PROGRAM_ADDRS)) {
         programIds.forEach((programId) => {
-            logger.info('instruction:', programId);
+            // logger.info('instruction:', programId);
         });
 
-        logger.info('check interest program failed');
+        // logger.warn('check interest program failed');
         return false;
     }
 
@@ -223,6 +227,362 @@ type TxDetails = {
     solBalanceChange: number;
     tradeDirect: 'buy' | 'sell';
 };
+
+type TxDetails2 = {
+    solChange: number;
+    preSolBalance: number;
+    tokenChanges: {
+        tokenId: string;
+        decimals: number;
+        preTokenAmountMax: number;
+        preTokenAmountMin: number;
+        tokenChange: number;
+    }[];
+};
+
+async function getTxDetails2(
+    monitorAddr: PublicKey,
+    txInfo: ParsedTransactionWithMeta,
+    txRes: VersionedTransactionResponse,
+): Promise<TxDetails2 | null> {
+    const monitorAddrIndex = txInfo.transaction.message.accountKeys.findIndex(
+        (v) => {
+            return v.pubkey.toBase58() == monitorAddr.toBase58();
+        },
+    );
+
+    if (monitorAddrIndex < 0) {
+        logger.info('monitorAddrIndex find error:', monitorAddrIndex);
+        return null;
+    }
+
+    const preBalances = txRes.meta!.preBalances;
+    const postBalances = txRes.meta!.postBalances;
+    const solChange =
+        (postBalances[monitorAddrIndex] - preBalances[monitorAddrIndex]) /
+        LAMPORTS_PER_SOL;
+
+    const preTokenBalances = txRes.meta!.preTokenBalances!;
+    const postTokenBalances = txRes.meta!.postTokenBalances!;
+
+    // logger.info(
+    //     monitorAddrIndex,
+    //     txRes.meta!.preTokenBalances!.length,
+    //     txRes.meta!.preTokenBalances!.length,
+    //     txInfo.transaction.message.accountKeys.length,
+    //     txRes.meta!.preBalances.length,
+    //     txRes.meta!.postBalances.length,
+    // );
+
+    const tokenChangesMap: Map<
+        string,
+        {
+            decimals: number;
+            tokenChange: number;
+            preTokenAmountMax: number;
+            preTokenAmountMin: number;
+        }
+    > = new Map();
+
+    postTokenBalances.forEach((v, i, arr) => {
+        if (v.owner! == monitorAddr.toBase58()) {
+            let tokenInfo = tokenChangesMap.get(v.mint);
+            const amount1 = v.uiTokenAmount.uiAmount
+                ? v.uiTokenAmount.uiAmount
+                : 0;
+            const amount2 = preTokenBalances[i].uiTokenAmount.uiAmount!
+                ? preTokenBalances[i].uiTokenAmount.uiAmount!
+                : 0;
+
+            if (tokenInfo == undefined) {
+                tokenChangesMap.set(v.mint, {
+                    decimals: v.uiTokenAmount.decimals,
+                    tokenChange: amount1,
+                    preTokenAmountMax: amount2,
+                    preTokenAmountMin: amount2,
+                });
+            } else {
+                tokenInfo.tokenChange += amount1;
+                tokenChangesMap.set(v.mint, tokenInfo);
+            }
+        }
+    });
+
+    preTokenBalances.forEach((v) => {
+        if (v.owner! == monitorAddr.toBase58()) {
+            let tokenInfo = tokenChangesMap.get(v.mint);
+            if (tokenInfo == undefined) {
+                // tokenChangesMap.set(v.mint, {
+                //     decimals: v.uiTokenAmount.decimals,
+                //     tokenChange: -v.uiTokenAmount.uiAmount!,
+                // });
+            } else {
+                const amount1 = v.uiTokenAmount.uiAmount
+                    ? v.uiTokenAmount.uiAmount
+                    : 0;
+                tokenInfo.tokenChange -= amount1;
+                tokenInfo.preTokenAmountMax =
+                    tokenInfo.preTokenAmountMax >= amount1
+                        ? tokenInfo.preTokenAmountMax
+                        : amount1;
+                tokenInfo.preTokenAmountMin =
+                    tokenInfo.preTokenAmountMin <= amount1
+                        ? tokenInfo.preTokenAmountMin
+                        : amount1;
+                tokenChangesMap.set(v.mint, tokenInfo);
+            }
+        }
+    });
+
+    const tokenChanges = Array.from(tokenChangesMap, ([key, value]) => ({
+        tokenId: key,
+        decimals: value.decimals,
+        tokenChange: value.tokenChange,
+        preTokenAmountMax: value.preTokenAmountMax,
+        preTokenAmountMin: value.preTokenAmountMin,
+    })).filter((v) => {
+        return Math.abs(v.tokenChange) > 0.0000001;
+    });
+
+    const txDetails: TxDetails2 = {
+        solChange: solChange,
+        preSolBalance: preBalances[monitorAddrIndex] / LAMPORTS_PER_SOL,
+        tokenChanges: tokenChanges,
+    };
+
+    return txDetails;
+}
+
+type TradeToken = {
+    tradeDirect: 'sell' | 'buy';
+    inToken: {
+        tokenId: string;
+        decimals: number;
+        amount: number;
+        preTokenAmount: number;
+    };
+    outToken: {
+        tokenId: string;
+        decimals: number;
+        amount: number;
+        preTokenAmount: number;
+    };
+};
+function getTradeToken(
+    txDetails: TxDetails2,
+    fee: number,
+    priorityFee: number,
+): TradeToken | null {
+    if (txDetails.tokenChanges.length == 2) {
+        if (
+            txDetails.tokenChanges[0].tokenId != USDT_TOKEN_ADDR &&
+            txDetails.tokenChanges[0].tokenId != USDC_TOKEN_ADDR &&
+            txDetails.tokenChanges[0].tokenId != WSOL_TOKEN_ADDR &&
+            txDetails.tokenChanges[1].tokenId != USDT_TOKEN_ADDR &&
+            txDetails.tokenChanges[1].tokenId != USDC_TOKEN_ADDR &&
+            txDetails.tokenChanges[1].tokenId != WSOL_TOKEN_ADDR
+        ) {
+            return null;
+        }
+
+        if (
+            (txDetails.tokenChanges[0].tokenId == USDT_TOKEN_ADDR ||
+                txDetails.tokenChanges[0].tokenId == USDC_TOKEN_ADDR ||
+                txDetails.tokenChanges[0].tokenId == WSOL_TOKEN_ADDR) &&
+            (txDetails.tokenChanges[1].tokenId == USDT_TOKEN_ADDR ||
+                txDetails.tokenChanges[1].tokenId == USDC_TOKEN_ADDR ||
+                txDetails.tokenChanges[1].tokenId == WSOL_TOKEN_ADDR)
+        ) {
+            return null;
+        }
+
+        if (
+            (txDetails.tokenChanges[0].tokenChange > 0 &&
+                txDetails.tokenChanges[1].tokenChange > 0) ||
+            (txDetails.tokenChanges[0].tokenChange < 0 &&
+                txDetails.tokenChanges[1].tokenChange < 0)
+        ) {
+            return null;
+        }
+
+        if (
+            txDetails.tokenChanges[0].tokenChange > 0 &&
+            (txDetails.tokenChanges[0].tokenId == USDT_TOKEN_ADDR ||
+                txDetails.tokenChanges[0].tokenId == USDC_TOKEN_ADDR ||
+                txDetails.tokenChanges[0].tokenId == WSOL_TOKEN_ADDR)
+        ) {
+            return {
+                tradeDirect: 'sell',
+                inToken: {
+                    tokenId: txDetails.tokenChanges[1].tokenId,
+                    decimals: txDetails.tokenChanges[1].decimals,
+                    amount: txDetails.tokenChanges[1].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[1].preTokenAmountMax,
+                },
+                outToken: {
+                    tokenId: txDetails.tokenChanges[0].tokenId,
+                    decimals: txDetails.tokenChanges[0].decimals,
+                    amount: txDetails.tokenChanges[0].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[0].preTokenAmountMin,
+                },
+            };
+        } else if (
+            txDetails.tokenChanges[0].tokenChange < 0 &&
+            (txDetails.tokenChanges[0].tokenId == USDT_TOKEN_ADDR ||
+                txDetails.tokenChanges[0].tokenId == USDC_TOKEN_ADDR ||
+                txDetails.tokenChanges[0].tokenId == WSOL_TOKEN_ADDR)
+        ) {
+            return {
+                tradeDirect: 'buy',
+                inToken: {
+                    tokenId: txDetails.tokenChanges[0].tokenId,
+                    decimals: txDetails.tokenChanges[0].decimals,
+                    amount: txDetails.tokenChanges[0].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[0].preTokenAmountMax,
+                },
+                outToken: {
+                    tokenId: txDetails.tokenChanges[1].tokenId,
+                    decimals: txDetails.tokenChanges[1].decimals,
+                    amount: txDetails.tokenChanges[1].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[1].preTokenAmountMin,
+                },
+            };
+        } else if (
+            txDetails.tokenChanges[1].tokenChange > 0 &&
+            (txDetails.tokenChanges[1].tokenId == USDT_TOKEN_ADDR ||
+                txDetails.tokenChanges[1].tokenId == USDC_TOKEN_ADDR ||
+                txDetails.tokenChanges[1].tokenId == WSOL_TOKEN_ADDR)
+        ) {
+            return {
+                tradeDirect: 'sell',
+                inToken: {
+                    tokenId: txDetails.tokenChanges[0].tokenId,
+                    decimals: txDetails.tokenChanges[0].decimals,
+                    amount: txDetails.tokenChanges[0].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[0].preTokenAmountMax,
+                },
+                outToken: {
+                    tokenId: txDetails.tokenChanges[1].tokenId,
+                    decimals: txDetails.tokenChanges[1].decimals,
+                    amount: txDetails.tokenChanges[1].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[1].preTokenAmountMin,
+                },
+            };
+        } else if (
+            txDetails.tokenChanges[1].tokenChange < 0 &&
+            (txDetails.tokenChanges[1].tokenId == USDT_TOKEN_ADDR ||
+                txDetails.tokenChanges[1].tokenId == USDC_TOKEN_ADDR ||
+                txDetails.tokenChanges[1].tokenId == WSOL_TOKEN_ADDR)
+        ) {
+            return {
+                tradeDirect: 'buy',
+                inToken: {
+                    tokenId: txDetails.tokenChanges[1].tokenId,
+                    decimals: txDetails.tokenChanges[1].decimals,
+                    amount: txDetails.tokenChanges[1].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[1].preTokenAmountMax,
+                },
+                outToken: {
+                    tokenId: txDetails.tokenChanges[0].tokenId,
+                    decimals: txDetails.tokenChanges[0].decimals,
+                    amount: txDetails.tokenChanges[0].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[0].preTokenAmountMin,
+                },
+            };
+        }
+    } else if (txDetails.tokenChanges.length == 1) {
+        if (txDetails.solChange > 0) {
+            if (txDetails.tokenChanges[0].tokenChange > 0) {
+                return null;
+            }
+
+            if (
+                txDetails.tokenChanges[0].tokenId == USDT_TOKEN_ADDR ||
+                txDetails.tokenChanges[0].tokenId == USDC_TOKEN_ADDR ||
+                txDetails.tokenChanges[0].tokenId == WSOL_TOKEN_ADDR
+            ) {
+                return null;
+            }
+
+            return {
+                tradeDirect: 'sell',
+                inToken: {
+                    tokenId: txDetails.tokenChanges[0].tokenId,
+                    decimals: txDetails.tokenChanges[0].decimals,
+                    amount: txDetails.tokenChanges[0].tokenChange,
+                    preTokenAmount: txDetails.tokenChanges[0].preTokenAmountMax,
+                },
+                outToken: {
+                    tokenId: WSOL_TOKEN_ADDR,
+                    decimals: 9,
+                    amount: txDetails.solChange + fee + priorityFee,
+                    preTokenAmount: txDetails.preSolBalance,
+                },
+            };
+        } else {
+            if (Math.abs(txDetails.solChange) > fee + priorityFee) {
+                if (txDetails.tokenChanges[0].tokenChange < 0) {
+                    return null;
+                }
+
+                return {
+                    tradeDirect: 'buy',
+                    inToken: {
+                        tokenId: WSOL_TOKEN_ADDR,
+                        decimals: 9,
+                        amount: -(
+                            Math.abs(txDetails.solChange) -
+                            fee -
+                            priorityFee
+                        ),
+                        preTokenAmount: txDetails.preSolBalance,
+                    },
+                    outToken: {
+                        tokenId: txDetails.tokenChanges[0].tokenId,
+                        decimals: txDetails.tokenChanges[0].decimals,
+                        amount: txDetails.tokenChanges[0].tokenChange,
+                        preTokenAmount:
+                            txDetails.tokenChanges[0].preTokenAmountMin,
+                    },
+                };
+            } else {
+                if (txDetails.tokenChanges[0].tokenChange > 0) {
+                    return null;
+                }
+
+                return {
+                    tradeDirect: 'sell',
+                    inToken: {
+                        tokenId: txDetails.tokenChanges[0].tokenId,
+                        decimals: txDetails.tokenChanges[0].decimals,
+                        amount: txDetails.tokenChanges[0].tokenChange,
+                        preTokenAmount:
+                            txDetails.tokenChanges[0].preTokenAmountMax,
+                    },
+                    outToken: {
+                        tokenId: WSOL_TOKEN_ADDR,
+                        decimals: 9,
+                        amount:
+                            Math.abs(txDetails.solChange) + fee + priorityFee,
+                        preTokenAmount: txDetails.preSolBalance,
+                    },
+                };
+            }
+        }
+    }
+
+    // if (txDetails.solChange > 0) {
+    //     return 'sell';
+    // } else {
+    //     if (Math.abs(txDetails.solChange) > fee + priorityFee) {
+    //         return 'buy';
+    //     } else {
+    //         return 'sell';
+    //     }
+    // }
+
+    return null;
+}
 
 async function getTxDetails(
     monitorAddr: PublicKey,
@@ -491,4 +851,6 @@ export {
     getLastTxHashOfAccount,
     checkTransaction,
     getTxDetails,
+    getTxDetails2,
+    getTradeToken,
 };

@@ -47,19 +47,44 @@ import { init_db } from './model/db_mod';
 import { init_web_svr } from './service/web_svr';
 import { init_timer_svr } from './service/timer_svr';
 import { init_monitor_svr } from './service/monitor_svr';
-import { SOL_TOKEN_ADDR } from './constants';
 import { tokenSwap } from './utils/swap_utils';
 import {
-    getTokenInfo,
+    getTokenInfo2,
     getTokenPairPriceFromJupiter,
 } from './utils/token_utils';
-import { checkTransaction, getPriorityFee, getTxInfo } from './utils/tx_utils';
-import { v4 as uuid } from 'uuid';
+import {
+    checkTransaction,
+    getFee,
+    getPriorityFee,
+    getTradeToken,
+    getTxDetails,
+    getTxDetails2,
+    getTxInfo,
+    getTxRes,
+} from './utils/tx_utils';
+// import { v4 as uuid } from 'uuid';
 
 async function main() {
     try {
         init_logger();
         init_conf();
+
+        // const tx_hash =
+        //     '651qgq1FSoVhMxxzSjDqCsws2mqYVpmgvoJ6imaFxJJJzjxmxdEB3aH3MJpXKpWaAW3iGj473qu27GHANNi5md7b';
+        // const conn = new Connection(conf.solana_rpc);
+        // const txInfo = await getTxInfo(conn, tx_hash);
+        // const txRes = await getTxRes(conn, tx_hash);
+        // const txDetails = await getTxDetails2(
+        //     new PublicKey('3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC'),
+        //     txInfo!,
+        //     txRes!,
+        // );
+        // const fee = getFee(txRes!);
+        // const priorityFee = getPriorityFee(txInfo!, txRes!);
+
+        // logger.info(txDetails);
+        // logger.info(getTradeToken(txDetails!, fee, priorityFee));
+
         await init_db();
         // init_timer_svr();
         init_web_svr();
