@@ -1,0 +1,11 @@
+tx hash: 
+// buy. user 3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC. gmgn. token store.
+4fytLBHuqiMxkxRLpXkFMoaG1ebvKFSvUibfuxEseeK4rcoRKaqYeGfehcCADm5TisA91GCgFtiSzj8Tw71TraW7
+// buy. user 3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC. gmgn. token store.
+34uqfuidiiqcW6aKWaSwY4p78Mg6uyS8a51hti8EQQVx8Z5o7xuZvMztodwE2r6FGYzEXrbL9qBpqb3HqpwjKaiq
+// buy. user As7HjL7dzzvbRbaD3WCun47robib2kmAKRXMvjHkSMB5. token amore ai.
+4txZJoisAyJPovwH9ex6oCnzaYxGJcC4kLHUbbJF9uopWSY6fGVA3Pofxu772E1ZanavmGk9WJdtHc8cgAycnho9
+
+user account addr: 
+As7HjL7dzzvbRbaD3WCun47robib2kmAKRXMvjHkSMB5
+3BiW6vEafksxQZp3v2Q4EPAKq3jh4VhCeifdAhqMVUyC

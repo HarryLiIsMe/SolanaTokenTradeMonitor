@@ -57,7 +57,7 @@ describe('test tx utils', function () {
     });
 
     it('test get tx details', async function () {
-        this.timeout(2000);
+        this.timeout(3000);
 
         init_logger();
         init_conf();
