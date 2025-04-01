@@ -143,12 +143,24 @@ async function checkTransaction(
     const programIds = instructions.map((instruction) =>
         instruction.programId.toBase58(),
     );
-    if (!checkInterestProgram(programIds, INTEREST_PROGRAM_ADDRS)) {
+    if (
+        !checkInterestProgram(programIds, INTEREST_PROGRAM_ADDRS) &&
+        !checkInterestAccount(
+            txInfo.transaction.message.accountKeys.map((v) => {
+                return v.pubkey.toBase58();
+            }),
+            INTEREST_PROGRAM_ADDRS,
+        )
+    ) {
         programIds.forEach((programId) => {
-            // logger.info('instruction:', programId);
+            // logger.warn('instruction:', programId);
         });
 
-        // logger.warn('check interest program failed');
+        txInfo.transaction.message.accountKeys.forEach((account) => {
+            // logger.warn('account:', account.pubkey.toBase58());
+        });
+
+        // logger.warn('check interest program or account failed');
         return false;
     }
 
@@ -212,6 +224,32 @@ function checkInterestProgram(
     if (!hasInterestProgram) {
         programIds.forEach((programId) => {
             // logger.info('instruction:', programId);
+        });
+
+        return false;
+    }
+
+    return true;
+}
+
+function checkInterestAccount(
+    accounts: string[],
+    interestAccountddrs: PublicKey[],
+): boolean {
+    let hasInterestProgram = false;
+    interestAccountddrs.forEach((interestAccountddrs) => {
+        if (accounts.includes(interestAccountddrs.toBase58())) {
+            hasInterestProgram = true;
+        }
+    });
+
+    // accounts.forEach((account) => {
+    //     logger.info('account:', account);
+    // });
+
+    if (!hasInterestProgram) {
+        accounts.forEach((account) => {
+            // logger.info('account:', account);
         });
 
         return false;

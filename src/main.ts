@@ -70,7 +70,7 @@ async function main() {
         init_conf();
 
         // const tx_hash =
-        //     '651qgq1FSoVhMxxzSjDqCsws2mqYVpmgvoJ6imaFxJJJzjxmxdEB3aH3MJpXKpWaAW3iGj473qu27GHANNi5md7b';
+        //     '22AgmRtSoiTkNqoYR8i7vf2VLTdEMuQQwKYADyBkfgU7byVGs9vnbW36mmSCGj8bLBFEnPAffsHL4GHWw8NCxtjh';
         // const conn = new Connection(conf.solana_rpc);
         // const txInfo = await getTxInfo(conn, tx_hash);
         // const txRes = await getTxRes(conn, tx_hash);
@@ -79,6 +79,10 @@ async function main() {
         //     txInfo!,
         //     txRes!,
         // );
+        // if (!(await checkTransaction(txInfo!, 1, 1))) {
+        //     logger.warn('check transaction failed:', tx_hash);
+        //     return;
+        // }
         // const fee = getFee(txRes!);
         // const priorityFee = getPriorityFee(txInfo!, txRes!);
 

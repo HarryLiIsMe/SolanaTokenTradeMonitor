@@ -21,6 +21,7 @@ import {
 } from '@/utils/token_utils';
 import { USDT_TOKEN_ADDR } from '@/constants';
 import { v4 as uuid } from 'uuid';
+import { log } from 'console';
 
 async function init_monitor_svr() {
     const conn = new Connection(conf.solana_rpc);
@@ -63,7 +64,10 @@ async function init_monitor_svr() {
                 const txInfo = await getTxInfo(conn, txHash);
                 const txRes = await getTxRes(conn, txHash);
                 if (!txInfo || !txRes) {
-                    logger.warn('get tx info or\\and get tx response failed');
+                    logger.warn(
+                        'get tx info or\\and get tx response failed:',
+                        txHash,
+                    );
                     continue;
                 }
                 if (
@@ -73,7 +77,7 @@ async function init_monitor_svr() {
                         followed_usr.block_number,
                     ))
                 ) {
-                    // logger.warn('check transaction failed');
+                    logger.warn('check transaction failed:', txHash);
                     continue;
                 }
                 followed_usr.tms = txInfo.blockTime!;
@@ -86,7 +90,7 @@ async function init_monitor_svr() {
                     txRes,
                 );
                 if (!txDetails) {
-                    logger.warn('getTxDetails failed');
+                    logger.warn('getTxDetails failed:', txHash);
                     continue;
                 }
                 // logger.info(txDetails);
@@ -96,7 +100,7 @@ async function init_monitor_svr() {
 
                 const txTradeInfo = getTradeToken(txDetails, fee, priorityFee);
                 if (!txTradeInfo) {
-                    logger.warn('getTradeToken failed');
+                    logger.warn('getTradeToken failed:', txHash);
                     continue;
                 }
                 logger.info(txTradeInfo);
@@ -113,14 +117,16 @@ async function init_monitor_svr() {
                     txTradeInfo.tradeDirect == 'buy'
                         ? txTradeInfo.outToken.tokenId
                         : txTradeInfo.inToken.tokenId;
-                const tokenAmount =
+                const tokenAmount = Math.abs(
                     txTradeInfo.tradeDirect == 'buy'
                         ? txTradeInfo.outToken.amount
-                        : txTradeInfo.inToken.amount;
-                const preTokenAmount =
+                        : txTradeInfo.inToken.amount,
+                );
+                const preTokenAmount = Math.abs(
                     txTradeInfo.tradeDirect == 'buy'
                         ? txTradeInfo.outToken.preTokenAmount
-                        : txTradeInfo.inToken.preTokenAmount;
+                        : txTradeInfo.inToken.preTokenAmount,
+                );
 
                 const follow_position = follow_positions.get(
                     followed_usr.account_addr + tradeTokenId,
@@ -137,6 +143,7 @@ async function init_monitor_svr() {
 
                 if (!follow_position) {
                     if (txTradeInfo.tradeDirect == 'sell') {
+                        logger.warn('sell empty posiotion');
                         continue;
                     }
 
