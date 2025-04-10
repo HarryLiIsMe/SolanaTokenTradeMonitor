@@ -15,6 +15,8 @@ folllow_mgr_router.get('/list_follow_positions', list_follow_positions);
 folllow_mgr_router.get('/list_follow_txs', list_follow_txs);
 
 function add_followed_addr(req: Request, res: Response) {
+    allowCORS(res);
+
     const followed_addr = req.params.addr;
     logger.info('add followed addr:', followed_addr);
 
@@ -42,6 +44,8 @@ function add_followed_addr(req: Request, res: Response) {
 }
 
 function del_followed_addr(req: Request, res: Response) {
+    allowCORS(res);
+
     const followed_addr = req.params.addr;
     logger.info('del followed addr:', followed_addr);
 
@@ -49,6 +53,7 @@ function del_followed_addr(req: Request, res: Response) {
         let follow_user = followed_usrs.get(followed_addr);
         if (follow_user && !follow_user.is_disabled) {
             follow_user.is_disabled = true;
+
             res.send('del success');
         } else if (follow_user && follow_user.is_disabled) {
             res.status(201).send('del follow address already is disable');
@@ -61,6 +66,8 @@ function del_followed_addr(req: Request, res: Response) {
 }
 
 function list_followed_users(req: Request, res: Response) {
+    allowCORS(res);
+
     const followeds = {
         followed_usrs: [...followed_usrs.values()],
     };
@@ -69,6 +76,8 @@ function list_followed_users(req: Request, res: Response) {
 }
 
 function list_follow_positions(req: Request, res: Response) {
+    allowCORS(res);
+
     const followeds = {
         follow_positions: [...follow_positions.values()],
     };
@@ -77,6 +86,8 @@ function list_follow_positions(req: Request, res: Response) {
 }
 
 function list_follow_txs(req: Request, res: Response) {
+    allowCORS(res);
+
     const followeds = {
         follow_txs: [...follow_txs.values()],
     };
@@ -98,4 +109,18 @@ function isValidSolanaAddress(address: string): boolean {
     } catch (error) {
         return false;
     }
+}
+
+function allowCORS(res: Response) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader(
+        'Access-Control-Allow-Methods',
+        'PUT,POST,GET,DELETE,OPTIONS',
+    );
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'false');
+    res.setHeader('Content-Type', 'application/json');
 }
