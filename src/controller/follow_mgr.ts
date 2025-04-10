@@ -76,6 +76,15 @@ type FollowedUser = {
     buy_num: number;
     sell_num: number;
     total_profit: number;
+    token_trade_info: Map<
+        string,
+        {
+            total_buy_amount: number;
+            total_sell_amount: number;
+            buy_token_amount: number;
+            sell_token_amount: number;
+        }
+    >;
 };
 
 async function list_followed_users(req: Request, res: Response) {
@@ -83,13 +92,39 @@ async function list_followed_users(req: Request, res: Response) {
     const usrTxs = new Map<string, FollowedUser>();
     follow_txs.forEach((tx) => {
         const userTxInfo = usrTxs.get(tx.followed_account_addr);
+
         if (userTxInfo) {
+            const tokenTradeInfo = userTxInfo.token_trade_info.get(tx.token_id);
             if (tx.trade_direct) {
                 userTxInfo.buy_num += 1;
                 userTxInfo.total_buy_amount += tx.amount * tx.price_usdt;
+                if (tokenTradeInfo) {
+                    tokenTradeInfo.total_buy_amount +=
+                        tx.amount * tx.price_usdt;
+                    tokenTradeInfo.buy_token_amount += tx.amount;
+                } else {
+                    userTxInfo.token_trade_info.set(tx.token_id, {
+                        total_buy_amount: tx.amount * tx.price_usdt,
+                        total_sell_amount: 0,
+                        buy_token_amount: tx.amount,
+                        sell_token_amount: 0,
+                    });
+                }
             } else {
                 userTxInfo.sell_num += 1;
                 userTxInfo.total_sell_amount += tx.amount * tx.price_usdt;
+                if (tokenTradeInfo) {
+                    tokenTradeInfo.total_sell_amount +=
+                        tx.amount * tx.price_usdt;
+                    tokenTradeInfo.sell_token_amount += tx.amount;
+                } else {
+                    userTxInfo.token_trade_info.set(tx.token_id, {
+                        total_buy_amount: 0,
+                        total_sell_amount: tx.amount * tx.price_usdt,
+                        buy_token_amount: 0,
+                        sell_token_amount: tx.amount,
+                    });
+                }
             }
         } else {
             const txInfo: FollowedUser = {
@@ -98,16 +133,40 @@ async function list_followed_users(req: Request, res: Response) {
                 buy_num: 0,
                 sell_num: 0,
                 total_profit: 0,
+                token_trade_info: new Map(),
             };
             if (tx.trade_direct) {
-                txInfo.total_buy_amount += tx.amount * tx.price_usdt;
+                txInfo.total_buy_amount = tx.amount * tx.price_usdt;
                 txInfo.buy_num = 1;
+                txInfo.token_trade_info.set(tx.token_id, {
+                    total_buy_amount: tx.amount * tx.price_usdt,
+                    total_sell_amount: 0,
+                    buy_token_amount: tx.amount,
+                    sell_token_amount: 0,
+                });
             } else {
-                txInfo.total_sell_amount += tx.amount * tx.price_usdt;
+                txInfo.total_sell_amount = tx.amount * tx.price_usdt;
                 txInfo.sell_num = 1;
+                txInfo.token_trade_info.set(tx.token_id, {
+                    total_buy_amount: 0,
+                    total_sell_amount: tx.amount * tx.price_usdt,
+                    buy_token_amount: 0,
+                    sell_token_amount: tx.amount,
+                });
             }
             usrTxs.set(tx.followed_account_addr, txInfo);
         }
+    });
+    usrTxs.forEach((usrTx) => {
+        usrTx.token_trade_info.forEach((tokenTradeInfo) => {
+            const diff_amount =
+                tokenTradeInfo.total_sell_amount -
+                (tokenTradeInfo.total_buy_amount *
+                    tokenTradeInfo.sell_token_amount) /
+                    tokenTradeInfo.buy_token_amount;
+
+            usrTx.total_profit += diff_amount;
+        });
     });
 
     const followeds = {
@@ -116,7 +175,9 @@ async function list_followed_users(req: Request, res: Response) {
                 const userTxInfo = usrTxs.get(v.account_addr);
                 if (!userTxInfo) {
                     return {
-                        ...v,
+                        account_addr: v.account_addr,
+                        is_disabled: v.is_disabled,
+                        tms: 1,
                         total_buy_amount: 0,
                         total_sell_amount: 0,
                         buy_num: 0,
@@ -125,8 +186,14 @@ async function list_followed_users(req: Request, res: Response) {
                     };
                 } else {
                     return {
-                        ...v,
-                        ...userTxInfo,
+                        account_addr: v.account_addr,
+                        is_disabled: v.is_disabled,
+                        tms: 1,
+                        total_buy_amount: userTxInfo.total_buy_amount,
+                        total_sell_amount: userTxInfo.total_sell_amount,
+                        buy_num: userTxInfo.buy_num,
+                        sell_num: userTxInfo.sell_num,
+                        total_profit: userTxInfo.total_profit,
                     };
                 }
             }),
