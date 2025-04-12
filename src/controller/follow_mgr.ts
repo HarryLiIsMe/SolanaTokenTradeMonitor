@@ -5,9 +5,13 @@ import bs58 from 'bs58';
 import {
     follow_positions,
     follow_txs,
-    followed_user_txs,
+    // followed_user_txs,
     followed_usrs,
 } from '@/model/db_mod';
+import { conf } from '@/conf/conf';
+import { getTokenPairPriceFromJupiter } from '@/utils/token_utils';
+import { USDT_TOKEN_ADDR } from '@/constants';
+import { number } from 'zod';
 
 export { folllow_mgr_router };
 
@@ -75,7 +79,9 @@ type FollowedUser = {
     total_sell_amount: number;
     buy_num: number;
     sell_num: number;
-    total_profit: number;
+    real_profit: number;
+    floating_profit: number;
+    tms: number;
     token_trade_info: Map<
         string,
         {
@@ -83,17 +89,35 @@ type FollowedUser = {
             total_sell_amount: number;
             buy_token_amount: number;
             sell_token_amount: number;
+            curr_token_price: number;
         }
     >;
 };
 
 async function list_followed_users(req: Request, res: Response) {
     allowCORS(res);
+
     const usrTxs = new Map<string, FollowedUser>();
-    follow_txs.forEach((tx) => {
+    const tokenIdPrices = new Map<string, number>();
+    for (const [_, tx] of follow_txs) {
+        let tokenId2usdtPrice = tokenIdPrices.get(tx.token_id);
+        if (!tokenId2usdtPrice) {
+            tokenId2usdtPrice = await getTokenPairPriceFromJupiter(
+                conf.price_api,
+                tx.token_id,
+                USDT_TOKEN_ADDR,
+            );
+            tokenIdPrices.set(tx.token_id, tokenId2usdtPrice);
+        }
+
+        // follow_txs.forEach((tx) => {
         const userTxInfo = usrTxs.get(tx.followed_account_addr);
 
         if (userTxInfo) {
+            if (tx.tms > userTxInfo.tms) {
+                tx.tms = userTxInfo.tms;
+            }
+
             const tokenTradeInfo = userTxInfo.token_trade_info.get(tx.token_id);
             if (tx.trade_direct) {
                 userTxInfo.buy_num += 1;
@@ -108,6 +132,7 @@ async function list_followed_users(req: Request, res: Response) {
                         total_sell_amount: 0,
                         buy_token_amount: tx.amount,
                         sell_token_amount: 0,
+                        curr_token_price: tokenId2usdtPrice,
                     });
                 }
             } else {
@@ -123,6 +148,7 @@ async function list_followed_users(req: Request, res: Response) {
                         total_sell_amount: tx.amount * tx.price_usdt,
                         buy_token_amount: 0,
                         sell_token_amount: tx.amount,
+                        curr_token_price: tokenId2usdtPrice,
                     });
                 }
             }
@@ -132,7 +158,9 @@ async function list_followed_users(req: Request, res: Response) {
                 total_sell_amount: 0,
                 buy_num: 0,
                 sell_num: 0,
-                total_profit: 0,
+                real_profit: 0,
+                floating_profit: 0,
+                tms: tx.tms,
                 token_trade_info: new Map(),
             };
             if (tx.trade_direct) {
@@ -143,6 +171,7 @@ async function list_followed_users(req: Request, res: Response) {
                     total_sell_amount: 0,
                     buy_token_amount: tx.amount,
                     sell_token_amount: 0,
+                    curr_token_price: tokenId2usdtPrice,
                 });
             } else {
                 txInfo.total_sell_amount = tx.amount * tx.price_usdt;
@@ -152,20 +181,23 @@ async function list_followed_users(req: Request, res: Response) {
                     total_sell_amount: tx.amount * tx.price_usdt,
                     buy_token_amount: 0,
                     sell_token_amount: tx.amount,
+                    curr_token_price: tokenId2usdtPrice,
                 });
             }
             usrTxs.set(tx.followed_account_addr, txInfo);
         }
-    });
+    }
+    // });
+
     usrTxs.forEach((usrTx) => {
         usrTx.token_trade_info.forEach((tokenTradeInfo) => {
-            const diff_amount =
+            const real_diff_amount =
                 tokenTradeInfo.total_sell_amount -
                 (tokenTradeInfo.total_buy_amount *
                     tokenTradeInfo.sell_token_amount) /
                     tokenTradeInfo.buy_token_amount;
 
-            usrTx.total_profit += diff_amount;
+            usrTx.real_profit += real_diff_amount;
         });
     });
 
@@ -182,18 +214,20 @@ async function list_followed_users(req: Request, res: Response) {
                         total_sell_amount: 0,
                         buy_num: 0,
                         sell_num: 0,
-                        total_profit: 0,
+                        real_profit: 0,
+                        floating_profit: 0,
                     };
                 } else {
                     return {
                         account_addr: v.account_addr,
                         is_disabled: v.is_disabled,
-                        tms: 1,
+                        tms: userTxInfo.tms,
                         total_buy_amount: userTxInfo.total_buy_amount,
                         total_sell_amount: userTxInfo.total_sell_amount,
                         buy_num: userTxInfo.buy_num,
                         sell_num: userTxInfo.sell_num,
-                        total_profit: userTxInfo.total_profit,
+                        real_profit: userTxInfo.real_profit,
+                        floating_profit: userTxInfo.floating_profit,
                     };
                 }
             }),

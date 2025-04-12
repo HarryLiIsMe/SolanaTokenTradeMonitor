@@ -3,7 +3,7 @@ import { logger } from '@/logger';
 import {
     follow_positions,
     follow_txs,
-    followed_user_txs,
+    // followed_user_txs,
     followed_usrs,
 } from '@/model/db_mod';
 import {
@@ -26,7 +26,6 @@ import {
 } from '@/utils/token_utils';
 import { USDT_TOKEN_ADDR } from '@/constants';
 import { v4 as uuid } from 'uuid';
-import { log } from 'console';
 
 async function init_monitor_svr() {
     const conn = new Connection(conf.solana_rpc);
@@ -159,17 +158,17 @@ async function init_monitor_svr() {
                     token2UsdtPrice.set(tradeTokenId, tokenId2usdtPrice);
                 }
 
-                followed_user_txs.set(txHash, {
-                    tx_hash: txHash,
-                    followed_account_addr: followed_usr.account_addr,
-                    token_id: tradeTokenId,
-                    amount: tokenAmount,
-                    // price_usdt: tokenId2usdtPrice,
-                    trade_direct:
-                        txTradeInfo.tradeDirect == 'buy' ? true : false,
-                    tms: txInfo.blockTime!,
-                    block_number: txInfo.slot,
-                });
+                // followed_user_txs.set(txHash, {
+                //     tx_hash: txHash,
+                //     followed_account_addr: followed_usr.account_addr,
+                //     token_id: tradeTokenId,
+                //     amount: tokenAmount,
+                //     // price_usdt: tokenId2usdtPrice,
+                //     trade_direct:
+                //         txTradeInfo.tradeDirect == 'buy' ? true : false,
+                //     tms: txInfo.blockTime!,
+                //     block_number: txInfo.slot,
+                // });
 
                 const buyMaxPositionValueTokenId =
                     conf.buy_max_position_value_usdt * usdt2TokenIdPrice;

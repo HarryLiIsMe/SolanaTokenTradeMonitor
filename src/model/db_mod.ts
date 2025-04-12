@@ -15,7 +15,7 @@ async function init_db() {
     followed_usrs = await load_followed_usrs_from_db();
     follow_positions = await load_follow_positions_from_db();
     follow_txs = await load_follow_txs_from_db();
-    followed_user_txs = await load_followed_usrs_txs_from_db();
+    // followed_user_txs = await load_followed_usrs_txs_from_db();
 
     logger.info('init db success');
 }
@@ -32,9 +32,9 @@ async function load_follow_txs_from_db() {
     return new Map();
 }
 
-async function load_followed_usrs_txs_from_db() {
-    return new Map();
-}
+// async function load_followed_usrs_txs_from_db() {
+//     return new Map();
+// }
 
 type FollowedUsr = {
     account_addr: string;
@@ -82,7 +82,7 @@ let follow_positions: Map<string, FollowPosition> = new Map();
 // key = following_tx_hash.
 let follow_txs: Map<string, FollowTx> = new Map();
 // key = tx_hash.
-let followed_user_txs: Map<string, FollowedUserTx> = new Map();
+// let followed_user_txs: Map<string, FollowedUserTx> = new Map();
 
 export {
     // follow_position,
@@ -91,10 +91,10 @@ export {
     follow_positions,
     followed_usrs,
     follow_txs,
-    followed_user_txs,
+    // followed_user_txs,
     load_follow_txs_from_db,
     load_followed_usrs_from_db,
     load_follow_positions_from_db,
-    load_followed_usrs_txs_from_db,
+    // load_followed_usrs_txs_from_db,
     init_db,
 };

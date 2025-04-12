@@ -529,16 +529,16 @@ function getTradeToken(
             };
         }
     } else if (txDetails.tokenChanges.length == 1) {
+        if (
+            txDetails.tokenChanges[0].tokenId == USDT_TOKEN_ADDR ||
+            txDetails.tokenChanges[0].tokenId == USDC_TOKEN_ADDR ||
+            txDetails.tokenChanges[0].tokenId == WSOL_TOKEN_ADDR
+        ) {
+            return null;
+        }
+
         if (txDetails.solChange > 0) {
             if (txDetails.tokenChanges[0].tokenChange > 0) {
-                return null;
-            }
-
-            if (
-                txDetails.tokenChanges[0].tokenId == USDT_TOKEN_ADDR ||
-                txDetails.tokenChanges[0].tokenId == USDC_TOKEN_ADDR ||
-                txDetails.tokenChanges[0].tokenId == WSOL_TOKEN_ADDR
-            ) {
                 return null;
             }
 
