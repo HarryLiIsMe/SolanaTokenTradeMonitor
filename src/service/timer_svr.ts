@@ -10,9 +10,10 @@ async function init_timer_svr() {
     const timerFn1 = async () => {
         try {
             await updateTokenInfos();
-            setTimeout(timerFn1, conf.timer_interval_ms);
         } catch (e) {
             logger.error('timer error: ', e);
+        } finally {
+            setTimeout(timerFn1, conf.timer_interval_ms);
         }
     };
 
