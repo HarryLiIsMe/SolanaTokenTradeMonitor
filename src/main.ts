@@ -8,8 +8,6 @@ import {
 } from '@solana/web3.js';
 import { Wallet } from '@coral-xyz/anchor';
 
-import { ethers } from 'ethers';
-
 import {
     dasApi,
     DasApiAsset,
@@ -48,10 +46,7 @@ import { init_web_svr } from './service/web_svr';
 import { init_timer_svr } from './service/timer_svr';
 import { init_monitor_svr } from './service/monitor_svr';
 import { tokenSwap } from './utils/swap_utils';
-import {
-    getTokenInfo2,
-    getTokenPairPriceFromJupiter,
-} from './utils/token_utils';
+import { getTokenInfo2 } from './utils/token_utils';
 import {
     checkTransaction,
     getFee,
@@ -90,7 +85,7 @@ async function main() {
         // logger.info(getTradeToken(txDetails!, fee, priorityFee));
 
         await init_db();
-        // init_timer_svr();
+        await init_timer_svr();
         init_web_svr();
         init_monitor_svr();
 

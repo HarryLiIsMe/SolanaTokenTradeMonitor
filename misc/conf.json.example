@@ -14,5 +14,7 @@
     "pri_key": "",
     "is_simulation": true,
     "timer_interval_ms": 1000,
-    "monitor_interval_ms": 1000
+    "monitor_interval_ms": 1000,
+    "update_price_interval_secs": 5,
+    "access_interval_secs": 20
 }

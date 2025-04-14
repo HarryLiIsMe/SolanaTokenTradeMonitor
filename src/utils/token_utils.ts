@@ -7,9 +7,6 @@ import {
 import { okx } from 'ccxt';
 import { conf } from '@/conf/conf';
 import z from 'zod';
-import { token } from '@coral-xyz/anchor/dist/cjs/utils';
-import { WSOL_TOKEN_ADDR, USDT_TOKEN_ADDR } from '@/constants';
-import { logger } from '@/logger';
 import { getMint, Mint } from '@solana/spl-token';
 import { Connection, PublicKey } from '@solana/web3.js';
 
@@ -34,35 +31,58 @@ async function getTokenInfo2(
     return mintInfo;
 }
 
-async function getSol2UsdtLastFromCex(): Promise<number | undefined> {
+async function getTokenPriceFromPyth(
+    inTokenName: string,
+    outTokenName: string,
+): Promise<number | undefined> {
+    return 0;
+}
+
+async function getTokenPriceFromOkxCex(
+    inTokenName: string,
+    outTokenName: string,
+): Promise<number | undefined> {
     const okx_cex = new okx();
-    const solUsdt = await okx_cex.fetchTicker('SOL/USDT');
+    const solUsdt = await okx_cex.fetchTicker(`${inTokenName}/${outTokenName}`);
 
     return solUsdt.last;
 }
 
-async function getUsdt2SolLastFromCex(): Promise<number | undefined> {
-    const okx_cex = new okx();
-    const solUsdt = await okx_cex.fetchTicker('USDT/SOL');
+// rate limit.
+async function getTokenPriceFromJupiter(
+    price_api: string,
+    token_in: string[],
+    token_out: string[],
+): Promise<number> {
+    const reqUrl = `${price_api}/price/v2?ids=${token_in[0]}&vsToken=${token_out[0]}`;
+    const priceResponseWithVsToken = await fetch(reqUrl);
 
-    return solUsdt.last;
-}
-
-async function getSol2UsdtLastFromJupiter(): Promise<number> {
-    return await getTokenPairPriceFromJupiter(
-        conf.price_api,
-        WSOL_TOKEN_ADDR,
-        USDT_TOKEN_ADDR,
+    const price_json = JSON.stringify(
+        await priceResponseWithVsToken.json(),
+        null,
+        2,
     );
+
+    const price: TypePriceJupiter = PriceJupiter.parse(JSON.parse(price_json));
+
+    return parseFloat(price.data[token_in[0]].price);
 }
 
-async function getUsdt2SolLastFromJupiter(): Promise<number> {
-    return await getTokenPairPriceFromJupiter(
-        conf.price_api,
-        USDT_TOKEN_ADDR,
-        WSOL_TOKEN_ADDR,
-    );
-}
+// async function getSol2UsdtLastFromJupiter(): Promise<number> {
+//     return await getTokenPairPriceFromJupiter(
+//         conf.price_api,
+//         WSOL_TOKEN_ADDR,
+//         USDT_TOKEN_ADDR,
+//     );
+// }
+
+// async function getUsdt2SolLastFromJupiter(): Promise<number> {
+//     return await getTokenPairPriceFromJupiter(
+//         conf.price_api,
+//         USDT_TOKEN_ADDR,
+//         WSOL_TOKEN_ADDR,
+//     );
+// }
 
 const PriceData = z.object({
     id: z.string(),
@@ -76,36 +96,10 @@ const PriceJupiter = z.object({
 });
 type TypePriceJupiter = z.infer<typeof PriceJupiter>;
 
-async function getTokenPairPriceFromJupiter(
-    price_api: string,
-    token_in: string,
-    token_out: string,
-): Promise<number> {
-    // logger.info(price_api);
-    const reqUrl = `${price_api}/price/v2?ids=${token_in}&vsToken=${token_out}`;
-    // logger.info(reqUrl);
-    const priceResponseWithVsToken = await fetch(reqUrl);
-
-    // logger.info(token_in, token_out);
-
-    const price_json = JSON.stringify(
-        await priceResponseWithVsToken.json(),
-        null,
-        2,
-    );
-    // logger.info(price_json);
-
-    const price: TypePriceJupiter = PriceJupiter.parse(JSON.parse(price_json));
-
-    return parseFloat(price.data[token_in].price);
-}
-
 export {
     getTokenInfo1,
     getTokenInfo2,
-    getSol2UsdtLastFromCex,
-    getUsdt2SolLastFromCex,
-    getUsdt2SolLastFromJupiter,
-    getSol2UsdtLastFromJupiter,
-    getTokenPairPriceFromJupiter,
+    getTokenPriceFromOkxCex,
+    getTokenPriceFromJupiter,
+    getTokenPriceFromPyth,
 };

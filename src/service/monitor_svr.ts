@@ -3,8 +3,10 @@ import { logger } from '@/logger';
 import {
     follow_positions,
     follow_txs,
+    followed_token_infos,
     // followed_user_txs,
     followed_usrs,
+    queryTokenInfo,
 } from '@/model/db_mod';
 import {
     checkTransaction,
@@ -19,11 +21,7 @@ import {
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import sleep from 'sleep-promise';
 import bs58 from 'bs58';
-import {
-    getSol2UsdtLastFromJupiter,
-    getTokenPairPriceFromJupiter,
-    getUsdt2SolLastFromJupiter,
-} from '@/utils/token_utils';
+import { getTokenPriceFromJupiter } from '@/utils/token_utils';
 import { USDT_TOKEN_ADDR } from '@/constants';
 import { v4 as uuid } from 'uuid';
 
@@ -35,17 +33,8 @@ async function init_monitor_svr() {
     // logger.info('user addr:', user_addr);
     // setInterval(async () => {
     while (true) {
-        const token2UsdtPrice = new Map<string, number>();
-        const usdt2TokenPrice = new Map<string, number>();
-
-        // const sol2UsdtPrice = await getSol2UsdtLastFromJupiter();
-        // const usdt2SolPrice = await getUsdt2SolLastFromJupiter();
-        // const sellMinPositionValueSol =
-        //     conf.sell_min_position_value_usdt * usdt2SolPrice;
-        // const buyMaxPositionValueSol =
-        //     conf.buy_max_position_value_usdt * usdt2SolPrice;
-        try {
-            for (let followed_usr of [...followed_usrs.values()]) {
+        for (let followed_usr of [...followed_usrs.values()]) {
+            try {
                 if (followed_usr.is_disabled) {
                     continue;
                 }
@@ -139,24 +128,41 @@ async function init_monitor_svr() {
                     followed_usr.account_addr + tradeTokenId,
                 );
 
-                let usdt2TokenIdPrice = usdt2TokenPrice.get(tradeTokenId);
-                if (!usdt2TokenIdPrice) {
-                    usdt2TokenIdPrice = await getTokenPairPriceFromJupiter(
-                        conf.price_api,
-                        USDT_TOKEN_ADDR,
-                        tradeTokenId,
-                    );
-                    usdt2TokenPrice.set(tradeTokenId, usdt2TokenIdPrice);
-                }
-                let tokenId2usdtPrice = token2UsdtPrice.get(tradeTokenId);
-                if (!tokenId2usdtPrice) {
-                    tokenId2usdtPrice = await getTokenPairPriceFromJupiter(
-                        conf.price_api,
-                        tradeTokenId,
-                        USDT_TOKEN_ADDR,
-                    );
-                    token2UsdtPrice.set(tradeTokenId, tokenId2usdtPrice);
-                }
+                const [token2UsdtPrice, usdt2TokenPrice] =
+                    await queryTokenInfo(tradeTokenId);
+                // let token2UsdtPrice = 0;
+                // let usdt2TokenPrice = 0;
+                // let tokenInfo = followed_token_info.get(tradeTokenId);
+                // if (!tokenInfo) {
+                //     logger.info('new token info');
+
+                //     token2UsdtPrice = await getTokenPriceFromJupiter(
+                //         conf.price_api,
+                //         [tradeTokenId],
+                //         [USDT_TOKEN_ADDR],
+                //     );
+                //     usdt2TokenPrice = await getTokenPriceFromJupiter(
+                //         conf.price_api,
+                //         [USDT_TOKEN_ADDR],
+                //         [tradeTokenId],
+                //     );
+
+                //     logger.info(tradeTokenId, token2UsdtPrice, usdt2TokenPrice);
+                //     followed_token_info.set(tradeTokenId, {
+                //         token_id: tradeTokenId,
+                //         token2usdt_price: token2UsdtPrice,
+                //         usdt2token_price: usdt2TokenPrice,
+                //         token_symbol: '',
+                //         last_update_tms: Math.floor(
+                //             new Date().getTime() / 1000,
+                //         ),
+                //     });
+                // } else {
+                //     logger.info('old token info');
+
+                //     token2UsdtPrice = tokenInfo.token2usdt_price;
+                //     usdt2TokenPrice = tokenInfo.usdt2token_price;
+                // }
 
                 // followed_user_txs.set(txHash, {
                 //     tx_hash: txHash,
@@ -171,9 +177,9 @@ async function init_monitor_svr() {
                 // });
 
                 const buyMaxPositionValueTokenId =
-                    conf.buy_max_position_value_usdt * usdt2TokenIdPrice;
+                    conf.buy_max_position_value_usdt * usdt2TokenPrice;
                 const sellMinPositionValueTokenId =
-                    conf.sell_min_position_value_usdt * usdt2TokenIdPrice;
+                    conf.sell_min_position_value_usdt * usdt2TokenPrice;
 
                 if (!follow_position) {
                     if (txTradeInfo.tradeDirect == 'sell') {
@@ -200,7 +206,7 @@ async function init_monitor_svr() {
                         trade_direct: true,
                         tms: Math.floor(Date.now() / 1000),
                         block_number: txInfo.blockTime! + 1,
-                        price_usdt: tokenId2usdtPrice,
+                        price_usdt: token2UsdtPrice,
                     });
 
                     follow_positions.set(
@@ -246,7 +252,7 @@ async function init_monitor_svr() {
                             trade_direct: false,
                             tms: Math.floor(Date.now() / 1000),
                             block_number: txInfo.blockTime! + 1,
-                            price_usdt: tokenId2usdtPrice,
+                            price_usdt: token2UsdtPrice,
                         });
 
                         follow_position.amount =
@@ -276,7 +282,7 @@ async function init_monitor_svr() {
                                 trade_direct: true,
                                 tms: Math.floor(Date.now() / 1000),
                                 block_number: txInfo.blockTime! + 1,
-                                price_usdt: tokenId2usdtPrice,
+                                price_usdt: token2UsdtPrice,
                             });
                         } else {
                             follow_position.amount = buyMaxPositionValueTokenId;
@@ -297,16 +303,16 @@ async function init_monitor_svr() {
                                 trade_direct: true,
                                 tms: Math.floor(Date.now() / 1000),
                                 block_number: txInfo.blockTime! + 1,
-                                price_usdt: tokenId2usdtPrice,
+                                price_usdt: token2UsdtPrice,
                             });
                         }
                     }
                 }
+            } catch (e) {
+                logger.error('init_monitor_svr', e);
             }
-            await sleep(200);
-        } catch (e) {
-            logger.error('init_monitor_svr', e);
         }
+        await sleep(conf.monitor_interval_ms);
     }
 
     // }, 1000);

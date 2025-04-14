@@ -5,13 +5,11 @@ import bs58 from 'bs58';
 import {
     follow_positions,
     follow_txs,
+    followed_token_infos,
     // followed_user_txs,
     followed_usrs,
+    queryTokenInfo,
 } from '@/model/db_mod';
-import { conf } from '@/conf/conf';
-import { getTokenPairPriceFromJupiter } from '@/utils/token_utils';
-import { USDT_TOKEN_ADDR } from '@/constants';
-import { number } from 'zod';
 
 export { folllow_mgr_router };
 
@@ -98,17 +96,24 @@ async function list_followed_users(req: Request, res: Response) {
     allowCORS(res);
 
     const usrTxs = new Map<string, FollowedUser>();
-    const tokenIdPrices = new Map<string, number>();
+    // const tokenIdPrices = new Map<string, number>();
     for (const [_, tx] of follow_txs) {
-        let tokenId2usdtPrice = tokenIdPrices.get(tx.token_id);
-        if (!tokenId2usdtPrice) {
-            tokenId2usdtPrice = await getTokenPairPriceFromJupiter(
-                conf.price_api,
-                tx.token_id,
-                USDT_TOKEN_ADDR,
-            );
-            tokenIdPrices.set(tx.token_id, tokenId2usdtPrice);
-        }
+        // const token2UsdtPrice = followed_token_infos.get(
+        //     tx.token_id,
+        // )!.token2usdt_price;
+
+        const [token2UsdtPrice, _] = await queryTokenInfo(tx.token_id);
+
+        // logger.info(tx.token_id, token2UsdtPrice);
+
+        // if (!token2UsdtPrice) {
+        //     token2UsdtPrice = await getTokenPairPriceFromJupiter(
+        //         conf.price_api,
+        //         tx.token_id,
+        //         USDT_TOKEN_ADDR,
+        //     );
+        //     token2UsdtPrice.set(tx.token_id, token2UsdtPrice);
+        // }
 
         // follow_txs.forEach((tx) => {
         const userTxInfo = usrTxs.get(tx.followed_account_addr);
@@ -132,7 +137,7 @@ async function list_followed_users(req: Request, res: Response) {
                         total_sell_amount: 0,
                         buy_token_amount: tx.amount,
                         sell_token_amount: 0,
-                        curr_token_price: tokenId2usdtPrice,
+                        curr_token_price: token2UsdtPrice,
                     });
                 }
             } else {
@@ -148,7 +153,7 @@ async function list_followed_users(req: Request, res: Response) {
                         total_sell_amount: tx.amount * tx.price_usdt,
                         buy_token_amount: 0,
                         sell_token_amount: tx.amount,
-                        curr_token_price: tokenId2usdtPrice,
+                        curr_token_price: token2UsdtPrice,
                     });
                 }
             }
@@ -171,7 +176,7 @@ async function list_followed_users(req: Request, res: Response) {
                     total_sell_amount: 0,
                     buy_token_amount: tx.amount,
                     sell_token_amount: 0,
-                    curr_token_price: tokenId2usdtPrice,
+                    curr_token_price: token2UsdtPrice,
                 });
             } else {
                 txInfo.total_sell_amount = tx.amount * tx.price_usdt;
@@ -181,7 +186,7 @@ async function list_followed_users(req: Request, res: Response) {
                     total_sell_amount: tx.amount * tx.price_usdt,
                     buy_token_amount: 0,
                     sell_token_amount: tx.amount,
-                    curr_token_price: tokenId2usdtPrice,
+                    curr_token_price: token2UsdtPrice,
                 });
             }
             usrTxs.set(tx.followed_account_addr, txInfo);
@@ -196,8 +201,35 @@ async function list_followed_users(req: Request, res: Response) {
                 (tokenTradeInfo.total_buy_amount *
                     tokenTradeInfo.sell_token_amount) /
                     tokenTradeInfo.buy_token_amount;
-
             usrTx.real_profit += real_diff_amount;
+
+            // const floating_diff_amount =
+            //     tokenTradeInfo.curr_token_price *
+            //         (tokenTradeInfo.buy_token_amount -
+            //             tokenTradeInfo.sell_token_amount) -
+            //     (tokenTradeInfo.total_buy_amount /
+            //         tokenTradeInfo.buy_token_amount) *
+            //         (tokenTradeInfo.buy_token_amount -
+            //             tokenTradeInfo.sell_token_amount);
+
+            const floating_diff_amount =
+                tokenTradeInfo.curr_token_price *
+                    (tokenTradeInfo.buy_token_amount -
+                        tokenTradeInfo.sell_token_amount) -
+                (tokenTradeInfo.total_buy_amount -
+                    (tokenTradeInfo.total_buy_amount *
+                        tokenTradeInfo.sell_token_amount) /
+                        tokenTradeInfo.buy_token_amount);
+
+            // logger.info(
+            //     floating_diff_amount,
+            //     tokenTradeInfo.curr_token_price,
+            //     tokenTradeInfo.buy_token_amount,
+            //     tokenTradeInfo.sell_token_amount,
+            //     tokenTradeInfo.total_buy_amount,
+            // );
+            // logger.info(tokenTradeInfo, floating_diff_amount);
+            usrTx.floating_profit += floating_diff_amount;
         });
     });
 

@@ -21,6 +21,8 @@ const ConfSchema = z.object({
     is_simulation: z.boolean(),
     timer_interval_ms: z.number(),
     monitor_interval_ms: z.number(),
+    update_price_interval_secs: z.number(),
+    access_interval_secs: z.number(),
 });
 type Conf = z.infer<typeof ConfSchema>;
 
