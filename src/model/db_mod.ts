@@ -110,8 +110,27 @@ async function queryTokenInfo(tokenId: string): Promise<[number, number]> {
             last_access_tms: curr_tms,
         });
     } else {
-        token2UsdtPrice = tokenInfo.token2usdt_price;
-        usdt2TokenPrice = tokenInfo.usdt2token_price;
+        if (
+            curr_tms >=
+            tokenInfo.last_update_tms + conf.update_price_interval_secs
+        ) {
+            token2UsdtPrice = await getTokenPriceFromJupiter(
+                conf.price_api,
+                [tokenId],
+                [USDT_TOKEN_ADDR],
+            );
+            usdt2TokenPrice = await getTokenPriceFromJupiter(
+                conf.price_api,
+                [USDT_TOKEN_ADDR],
+                [tokenId],
+            );
+            tokenInfo.token2usdt_price = token2UsdtPrice;
+            tokenInfo.usdt2token_price = usdt2TokenPrice;
+            tokenInfo.last_update_tms = curr_tms;
+        } else {
+            token2UsdtPrice = tokenInfo.token2usdt_price;
+            usdt2TokenPrice = tokenInfo.usdt2token_price;
+        }
         tokenInfo.last_access_tms = curr_tms;
     }
 
