@@ -7,14 +7,16 @@ import { log } from 'console';
 
 async function init_timer_svr() {
     // await update_token_prices();
-    setInterval(async () => {
+    const timerFn1 = async () => {
         try {
             await updateTokenInfos();
+            setTimeout(timerFn1, conf.timer_interval_ms);
         } catch (e) {
-            logger.error('updateTokenInfos error: ', e);
+            logger.error('timer error: ', e);
         }
-    }, conf.update_price_interval_secs * 1000);
+    };
 
+    setTimeout(timerFn1, conf.timer_interval_ms);
     logger.info('init timer svr success');
 }
 

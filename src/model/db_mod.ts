@@ -52,32 +52,34 @@ async function updateTokenInfos() {
                 curr_tms >=
                 tokenInfo.last_update_tms + conf.update_price_interval_secs
             ) {
-                const token2UsdtPrice = await getTokenPriceFromJupiter(
-                    conf.price_api,
-                    [tokenId],
-                    [USDT_TOKEN_ADDR],
-                );
-                const usdt2TokenPrice = await getTokenPriceFromJupiter(
-                    conf.price_api,
-                    [USDT_TOKEN_ADDR],
-                    [tokenId],
-                );
+                const [token2UsdtPrice, usdt2TokenPrice] = await Promise.all([
+                    getTokenPriceFromJupiter(
+                        conf.price_api,
+                        [tokenId],
+                        [USDT_TOKEN_ADDR],
+                    ),
+                    getTokenPriceFromJupiter(
+                        conf.price_api,
+                        [USDT_TOKEN_ADDR],
+                        [tokenId],
+                    ),
+                ]);
 
                 tokenInfo.token2usdt_price = token2UsdtPrice;
                 tokenInfo.usdt2token_price = usdt2TokenPrice;
                 tokenInfo.last_update_tms = curr_tms;
 
-                // logger.info(
-                //     'token price update success',
-                //     tokenId,
-                //     curr_tms,
-                //     tokenInfo.last_update_tms,
-                //     conf.update_price_interval_secs,
-                //     tokenInfo.last_update_tms + conf.update_price_interval_secs,
-                //     tokenInfo.last_access_tms,
-                //     conf.access_interval_secs,
-                //     tokenInfo.last_access_tms + conf.access_interval_secs,
-                // );
+                logger.info(
+                    'token price update success',
+                    tokenId,
+                    curr_tms,
+                    tokenInfo.last_update_tms,
+                    conf.update_price_interval_secs,
+                    tokenInfo.last_update_tms + conf.update_price_interval_secs,
+                    tokenInfo.last_access_tms,
+                    conf.access_interval_secs,
+                    tokenInfo.last_access_tms + conf.access_interval_secs,
+                );
             }
         }
     }
