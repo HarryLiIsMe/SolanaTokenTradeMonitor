@@ -204,7 +204,7 @@ async function init_monitor_svr() {
                         // token_symbol: '',
                         amount: newAmount,
                         trade_direct: true,
-                        tms: Math.floor(Date.now() / 1000),
+                        tms: Math.floor(new Date().getTime() / 1000),
                         block_number: txInfo.blockTime! + 1,
                         price_usdt: token2UsdtPrice,
                     });
@@ -250,7 +250,7 @@ async function init_monitor_svr() {
                             // token_symbol: '',
                             amount: sellAmount,
                             trade_direct: false,
-                            tms: Math.floor(Date.now() / 1000),
+                            tms: Math.floor(new Date().getTime() / 1000),
                             block_number: txInfo.blockTime! + 1,
                             price_usdt: token2UsdtPrice,
                         });
@@ -280,7 +280,7 @@ async function init_monitor_svr() {
                                 // token_symbol: '',
                                 amount: tokenAmount,
                                 trade_direct: true,
-                                tms: Math.floor(Date.now() / 1000),
+                                tms: Math.floor(new Date().getTime() / 1000),
                                 block_number: txInfo.blockTime! + 1,
                                 price_usdt: token2UsdtPrice,
                             });
@@ -301,7 +301,7 @@ async function init_monitor_svr() {
                                     buyMaxPositionValueTokenId -
                                     follow_position.amount,
                                 trade_direct: true,
-                                tms: Math.floor(Date.now() / 1000),
+                                tms: Math.floor(new Date().getTime() / 1000),
                                 block_number: txInfo.blockTime! + 1,
                                 price_usdt: token2UsdtPrice,
                             });

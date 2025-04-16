@@ -171,19 +171,19 @@ type FollowedTokenInfo = {
     last_access_tms: number;
 };
 
-type FollowedUserTx = {
-    tx_hash: string;
-    followed_account_addr: string;
-    token_id: string;
-    amount: number;
-    // price_usdt: number;
-    // buy=true or sell=false.
-    trade_direct: boolean;
-    tms: number;
-    block_number: number;
-};
+// type FollowedUserTx = {
+//     tx_hash: string;
+//     followed_account_addr: string;
+//     token_id: string;
+//     amount: number;
+//     // price_usdt: number;
+//     // buy=true or sell=false.
+//     trade_direct: boolean;
+//     tms: number;
+//     block_number: number;
+// };
 
-// key = account_addr.
+// // key = account_addr.
 let followed_usrs: Map<string, FollowedUsr> = new Map();
 // key = followed_account_addr + token_id.
 let follow_positions: Map<string, FollowPosition> = new Map();

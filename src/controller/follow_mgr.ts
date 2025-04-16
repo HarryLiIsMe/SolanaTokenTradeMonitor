@@ -10,6 +10,7 @@ import {
     followed_usrs,
     queryTokenInfo,
 } from '@/model/db_mod';
+import { boolean } from 'zod';
 
 export { folllow_mgr_router };
 
@@ -19,7 +20,7 @@ folllow_mgr_router.get('/add_followed_addr/:addr', add_followed_addr);
 folllow_mgr_router.get('/del_followed_addr/:addr', del_followed_addr);
 folllow_mgr_router.get('/list_followed_users', list_followed_users);
 folllow_mgr_router.get('/list_follow_positions', list_follow_positions);
-folllow_mgr_router.get('/list_follow_txs', list_follow_txs);
+folllow_mgr_router.get('/list_follow_txs/:addr', list_follow_txs);
 
 function add_followed_addr(req: Request, res: Response) {
     allowCORS(res);
@@ -117,10 +118,9 @@ async function list_followed_users(req: Request, res: Response) {
 
         // follow_txs.forEach((tx) => {
         const userTxInfo = usrTxs.get(tx.followed_account_addr);
-
         if (userTxInfo) {
             if (tx.tms > userTxInfo.tms) {
-                tx.tms = userTxInfo.tms;
+                userTxInfo.tms = tx.tms;
             }
 
             const tokenTradeInfo = userTxInfo.token_trade_info.get(tx.token_id);
@@ -203,33 +203,38 @@ async function list_followed_users(req: Request, res: Response) {
                     tokenTradeInfo.buy_token_amount;
             usrTx.real_profit += real_diff_amount;
 
-            // const floating_diff_amount =
-            //     tokenTradeInfo.curr_token_price *
-            //         (tokenTradeInfo.buy_token_amount -
-            //             tokenTradeInfo.sell_token_amount) -
-            //     (tokenTradeInfo.total_buy_amount /
-            //         tokenTradeInfo.buy_token_amount) *
-            //         (tokenTradeInfo.buy_token_amount -
-            //             tokenTradeInfo.sell_token_amount);
+            if (
+                tokenTradeInfo.buy_token_amount >
+                tokenTradeInfo.sell_token_amount
+            ) {
+                // const floating_diff_amount =
+                //     tokenTradeInfo.curr_token_price *
+                //         (tokenTradeInfo.buy_token_amount -
+                //             tokenTradeInfo.sell_token_amount) -
+                //     (tokenTradeInfo.total_buy_amount /
+                //         tokenTradeInfo.buy_token_amount) *
+                //         (tokenTradeInfo.buy_token_amount -
+                //             tokenTradeInfo.sell_token_amount);
 
-            const floating_diff_amount =
-                tokenTradeInfo.curr_token_price *
-                    (tokenTradeInfo.buy_token_amount -
-                        tokenTradeInfo.sell_token_amount) -
-                (tokenTradeInfo.total_buy_amount -
-                    (tokenTradeInfo.total_buy_amount *
-                        tokenTradeInfo.sell_token_amount) /
-                        tokenTradeInfo.buy_token_amount);
+                const floating_diff_amount =
+                    tokenTradeInfo.curr_token_price *
+                        (tokenTradeInfo.buy_token_amount -
+                            tokenTradeInfo.sell_token_amount) -
+                    (tokenTradeInfo.total_buy_amount -
+                        (tokenTradeInfo.total_buy_amount *
+                            tokenTradeInfo.sell_token_amount) /
+                            tokenTradeInfo.buy_token_amount);
 
-            // logger.info(
-            //     floating_diff_amount,
-            //     tokenTradeInfo.curr_token_price,
-            //     tokenTradeInfo.buy_token_amount,
-            //     tokenTradeInfo.sell_token_amount,
-            //     tokenTradeInfo.total_buy_amount,
-            // );
-            // logger.info(tokenTradeInfo, floating_diff_amount);
-            usrTx.floating_profit += floating_diff_amount;
+                // logger.info(
+                //     floating_diff_amount,
+                //     tokenTradeInfo.curr_token_price,
+                //     tokenTradeInfo.buy_token_amount,
+                //     tokenTradeInfo.sell_token_amount,
+                //     tokenTradeInfo.total_buy_amount,
+                // );
+                // logger.info(tokenTradeInfo, floating_diff_amount);
+                usrTx.floating_profit += floating_diff_amount;
+            }
         });
     });
 
@@ -279,14 +284,85 @@ function list_follow_positions(req: Request, res: Response) {
     res.send(JSON.stringify(followeds));
 }
 
+type FollowTxToken = {
+    total_buy_amount: number;
+    total_buy_token: number;
+};
 function list_follow_txs(req: Request, res: Response) {
     allowCORS(res);
 
-    const followeds = {
-        follow_txs: [...follow_txs.values()],
-    };
+    const followed_addr = req.params.addr;
+    logger.info('list_follow_txs addr:', followed_addr);
 
-    res.send(JSON.stringify(followeds));
+    if (!isValidSolanaAddress(followed_addr)) {
+        if (!isValidSolanaAddress(followed_addr)) {
+            res.status(400).json({
+                success: false,
+                error: 'addr validate failed',
+            });
+        }
+    }
+
+    // const followeds = {
+    //     follow_txs: [...follow_txs.values()],
+    // };
+
+    // res.send(JSON.stringify(followeds));
+
+    const follow_txs_by_addr = [
+        ...follow_txs.values().filter((v) => {
+            return v.followed_account_addr === followed_addr;
+        }),
+    ];
+
+    const followTxTokens = new Map<string, FollowTxToken>();
+    follow_txs_by_addr.forEach((v) => {
+        if (v.trade_direct) {
+            let txToken = followTxTokens.get(v.token_id);
+            if (txToken) {
+                txToken.total_buy_token += v.amount;
+                txToken.total_buy_amount += v.amount * v.price_usdt;
+            } else {
+                followTxTokens.set(v.token_id, {
+                    total_buy_amount: v.amount * v.price_usdt,
+                    total_buy_token: v.amount,
+                });
+            }
+        }
+    });
+
+    const follow_txs_by_addr_res = follow_txs_by_addr.map((v) => {
+        // console.log(v);
+        let profit = 0;
+        if (!v.trade_direct) {
+            const txToken = followTxTokens.get(v.token_id);
+            if (txToken) {
+                profit =
+                    v.amount * v.price_usdt -
+                    (v.amount * txToken.total_buy_amount) /
+                        txToken.total_buy_token;
+            }
+        }
+
+        return {
+            tx_hash: v.following_tx_hash,
+            account_addr: followed_addr,
+            trade_direct: v.trade_direct,
+            token_id: v.token_id,
+            total_amount_usdt: v.price_usdt * v.amount,
+            total_amount_token: v.amount,
+            price_usdt: v.price_usdt,
+            profit: profit,
+            tms: v.tms,
+        };
+    });
+
+    res.send(
+        JSON.stringify({
+            success: true,
+            follow_txs: [...follow_txs_by_addr_res],
+        }),
+    );
 }
 
 function isValidSolanaAddress(address: string): boolean {
